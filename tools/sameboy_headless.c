@@ -5,10 +5,19 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sameboy/gb.h>
+#include "boot_rom.h"
 
 static uint32_t pixel_buffer[160 * 144];
 static int frame_count = 0;
 static int target_frames = 0;
+static int enable_debug = 0;
+
+static void log_callback(GB_gameboy_t *gb, const char *string, GB_log_attributes attributes) {
+    // Only print logs in debug mode
+    if (enable_debug) {
+        printf("[LOG] %s", string);
+    }
+}
 
 static void vblank_callback(GB_gameboy_t *gb, GB_vblank_type_t type) {
     // Called when vblank occurs
@@ -78,14 +87,20 @@ static void save_frame_ppm(const char *output_dir, int frame_num) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 4) {
-        fprintf(stderr, "Usage: %s <rom_file> <num_frames> <output_dir>\n", argv[0]);
+    if (argc < 4 || argc > 5) {
+        fprintf(stderr, "Usage: %s <rom_file> <num_frames> <output_dir> [--debug]\n", argv[0]);
         return 1;
     }
     
     const char *rom_file = argv[1];
     target_frames = atoi(argv[2]);
     const char *output_dir = argv[3];
+    
+    // Check for debug flag
+    if (argc == 5 && strcmp(argv[4], "--debug") == 0) {
+        enable_debug = 1;
+        printf("Debug mode enabled\n");
+    }
     
     // Create output directory
     mkdir(output_dir, 0755);
@@ -98,6 +113,13 @@ int main(int argc, char **argv) {
     GB_set_vblank_callback(&gb, vblank_callback);
     GB_set_rgb_encode_callback(&gb, rgb_encode);
     GB_set_pixels_output(&gb, pixel_buffer);
+    GB_set_log_callback(&gb, log_callback);
+    
+    // Load embedded boot ROM from memory
+    GB_load_boot_rom_from_buffer(&gb, dmg_boot_rom, dmg_boot_rom_size);
+    if (enable_debug) {
+        printf("Loaded embedded boot ROM (%zu bytes)\n", dmg_boot_rom_size);
+    }
     
     // Load ROM
     if (GB_load_rom(&gb, rom_file) != 0) {
@@ -108,27 +130,46 @@ int main(int argc, char **argv) {
     
     // Run for specified number of frames
     int saved_frames = 0;
-    int cycles = 0;
-    const int MAX_CYCLES = 1000000; // Prevent infinite loop
     
-    printf("Running emulator for %d frames...\n", target_frames);
-    
-    while (saved_frames < target_frames && cycles < MAX_CYCLES) {
-        // Run the emulator for one frame worth of cycles
-        // GB runs at 4194304 Hz, ~70224 cycles per frame
-        for (int i = 0; i < 70224; i++) {
-            GB_run(&gb);
-        }
-        
-        cycles++;
-        saved_frames++;
-        printf("Saving frame %d...\n", saved_frames);
-        save_frame_rgba(output_dir, saved_frames);
-        save_frame_ppm(output_dir, saved_frames);
+    if (enable_debug) {
+        printf("Running emulator for %d frames...\n", target_frames);
     }
     
-    if (cycles >= MAX_CYCLES) {
-        fprintf(stderr, "Warning: Maximum cycles reached\n");
+    // Run emulation and save frames
+    for (int frame = 0; frame < target_frames; frame++) {
+        // Run one complete frame
+        GB_run_frame(&gb);
+        
+        // Debug: Print state info at the end if in debug mode
+        if (enable_debug && frame == target_frames - 1) {
+            printf("[DEBUG] After frame %d:\n", frame + 1);
+            printf("  LCDC (0xFF40): 0x%02X\n", GB_read_memory(&gb, 0xFF40));
+            printf("  BGP (0xFF47): 0x%02X\n", GB_read_memory(&gb, 0xFF47));
+            printf("  SCY (0xFF42): 0x%02X\n", GB_read_memory(&gb, 0xFF42));
+            printf("  SCX (0xFF43): 0x%02X\n", GB_read_memory(&gb, 0xFF43));
+            printf("  LY (0xFF44): 0x%02X\n", GB_read_memory(&gb, 0xFF44));
+            
+            // Check tile data at 0x8000
+            printf("  Tile 0 first bytes: 0x%02X 0x%02X\n", 
+                   GB_read_memory(&gb, 0x8000), GB_read_memory(&gb, 0x8001));
+            printf("  Tile 1 first bytes: 0x%02X 0x%02X\n", 
+                   GB_read_memory(&gb, 0x8010), GB_read_memory(&gb, 0x8011));
+            printf("  Tilemap[0-7]: %02X %02X %02X %02X %02X %02X %02X %02X\n",
+                   GB_read_memory(&gb, 0x9800), GB_read_memory(&gb, 0x9801),
+                   GB_read_memory(&gb, 0x9802), GB_read_memory(&gb, 0x9803),
+                   GB_read_memory(&gb, 0x9804), GB_read_memory(&gb, 0x9805),
+                   GB_read_memory(&gb, 0x9806), GB_read_memory(&gb, 0x9807));
+        }
+        
+        // Save the current frame (only save first/last frames to speed up)
+        saved_frames++;
+        if (frame >= target_frames - 10 || frame < 2) {
+            if (enable_debug) {
+                printf("Saving frame %d...\n", saved_frames);
+            }
+            save_frame_rgba(output_dir, saved_frames);
+            save_frame_ppm(output_dir, saved_frames);
+        }
     }
     
     GB_free(&gb);

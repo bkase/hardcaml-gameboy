@@ -1,19 +1,21 @@
+(rule
+ (targets tools_and_roms_built)
+ (deps
+  (source_tree ../tools)
+  (source_tree ../roms)
+  (source_tree ../vendor))
+ (action
+  (progn
+   (run make -C .. tools roms)
+   (with-stdout-to %{targets} (echo "done")))))
+
 (test
  (name oracle_lockstep)
  (libraries core alcotest core_unix core_unix.sys_unix)
  (deps
-  (source_tree ../roms)
-  (source_tree ../tools))
- (action
-  (progn
-   (run %{test}))))
-
-(rule
- (alias runtest)
- (deps
+  tools_and_roms_built
   ../roms/flat_bg.gb
   ../tools/sameboy_headless)
  (action
   (progn
-   (run make -C ../roms)
-   (run make -C ../tools))))
+   (run %{test}))))

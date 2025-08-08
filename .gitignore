@@ -67,6 +67,8 @@ roms/*.gb
 
 # Tool build artifacts
 tools/sameboy_headless
+tools/boot_rom.h
+tools/dmg_boot.bin
 
 # SameBoy build
 vendor/SameBoy/build/

@@ -39,15 +39,34 @@
           ];
           
           shellHook = ''
+            # Set up opam environment if it's initialized
+            if [ -d "$HOME/.opam" ]; then
+              eval $(opam env --shell=bash 2>/dev/null)
+            fi
+            
             echo "HardCaml development environment ready!"
-            echo "OCaml version: $(ocaml -version)"
+            
+            # Check if OCaml is available through opam
+            if command -v ocaml &> /dev/null; then
+              echo "OCaml version: $(ocaml -version 2>&1 | head -1)"
+            else
+              echo "OCaml: Not found (run setup commands below)"
+            fi
+            
             echo "Z3 version: $(z3 --version)"
-            echo ""
-            echo "First time setup:"
-            echo "  opam init --disable-sandboxing"
-            echo "  opam install . --deps-only --yes"
-            echo ""
-            echo "Then run 'make info' to see available commands"
+            
+            # Check if opam is initialized
+            if [ ! -d "$HOME/.opam" ]; then
+              echo ""
+              echo "First time setup:"
+              echo "  opam init --disable-sandboxing"
+              echo "  eval \$(opam env)"
+              echo "  opam install . --deps-only --yes"
+            else
+              echo ""
+              echo "Opam environment loaded automatically"
+              echo "Run 'make info' to see available commands"
+            fi
           '';
         };
       });

@@ -30,19 +30,21 @@ let read_rgba_lines ~path ~lines =
 let run_dut_stub ~rom:_ ~output_dir ~lines =
   Core_unix.mkdir_p output_dir;
   
-  (* Generate checkerboard pattern matching what flat_bg.gb should produce *)
+  (* Generate checkerboard pattern matching what flat_bg.gb produces:
+     8x8 tiles alternating between all black and all white *)
   let pixels = Array.init (160 * lines) ~f:(fun i ->
     let x = i % 160 in
     let y = i / 160 in
-    let pixel_x = x % 8 in
-    let pixel_y = y % 8 in
-    let is_dark = (pixel_x % 2) lxor (pixel_y % 2) = 1 in
-    let gray = if is_dark then 0x55 else 0xAA in
+    let tile_x = x / 8 in
+    let tile_y = y / 8 in
+    (* Tiles alternate in a checkerboard pattern *)
+    let is_black_tile = (tile_x + tile_y) % 2 = 0 in
+    let gray = if is_black_tile then 0x00 else 0xFF in
     { r = gray; g = gray; b = gray }
   ) in
   
-  (* Save as RGBA *)
-  let rgba_path = output_dir ^/ "frame_0001.rgba" in
+  (* Save as RGBA - match oracle frame number *)
+  let rgba_path = output_dir ^/ "frame_0300.rgba" in
   let oc = Out_channel.create rgba_path in
   Array.iter pixels ~f:(fun p ->
     Out_channel.output_char oc (Char.of_int_exn p.r);
@@ -58,19 +60,19 @@ let run_dut_stub ~rom:_ ~output_dir ~lines =
 let run_oracle ~rom ~output_dir =
   Core_unix.mkdir_p output_dir;
   
-  (* Run sameboy_headless *)
-  let cmd = sprintf "../tools/sameboy_headless ../%s 1 %s" rom output_dir in
+  (* Run sameboy_headless - need 300 frames for flat_bg.gb to fully initialize with boot ROM *)
+  let cmd = sprintf "../tools/sameboy_headless ../%s 300 %s" rom output_dir in
   printf "Running oracle: %s\n" cmd;
   let result = Core_unix.system cmd in
   
   match result with
   | Ok () ->
-    (* Read the generated frame *)
-    let rgba_path = output_dir ^/ "frame_0001.rgba" in
+    (* Read the last generated frame (300th frame) *)
+    let rgba_path = output_dir ^/ "frame_0300.rgba" in
     if Core.Result.is_ok (Core_unix.access rgba_path [`Exists]) then
       read_rgba_lines ~path:rgba_path ~lines:2
     else
-      failwith "Oracle did not generate frame_0001.rgba"
+      failwith "Oracle did not generate frame_0300.rgba"
   | Error _ -> failwith "Failed to run oracle"
 
 (* Compare pixel streams *)

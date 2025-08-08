@@ -50,43 +50,78 @@ SECTION "Header", ROM0[$100]
     ; Global checksum (will be fixed by rgbfix)
     DW 0
 
-SECTION "Main", ROM0
-
 Start:
+    ; Disable interrupts first
+    di
+    
     ; Wait for VBlank before turning off LCD
-    ld a, [$FF44]  ; LY register
-    cp 144
-    jr c, Start
-
-    ; Turn off LCD
+.wait_vblank:
+    ld a, [$FF44]  ; Read LY
+    cp 144         ; Check if in VBlank (LY >= 144)
+    jr c, .wait_vblank
+    
+    ; Now safe to turn off LCD
     xor a
     ld [$FF40], a  ; LCDC = 0
-
-    ; Create checkerboard tile at $8000
-    ; Tile data: alternating pixels (0b10101010, 0b01010101)
+    
+    ; Small delay to ensure LCD is fully off
+    ld b, 200
+.lcd_wait:
+    dec b
+    jr nz, .lcd_wait
+    
+    ; Create solid black tile at $8000
+    ; Black = color 3 (both bits set for all pixels)
     ld hl, $8000
-    ld b, 8        ; 8 rows per tile
+    ld b, 16       ; 16 bytes (8 rows * 2 bytes/row)
+    ld a, $FF      ; All bits set
 .tile_loop:
-    ld a, $AA      ; 10101010 - pixels 0,2,4,6 are color 2, 1,3,5,7 are color 0
-    ld [hl+], a
-    ld a, $55      ; 01010101 - pixels 0,2,4,6 are color 1, 1,3,5,7 are color 0
     ld [hl+], a
     dec b
     jr nz, .tile_loop
-
-    ; Fill background tilemap at $9800 with tile 0
-    ld hl, $9800
-    ld bc, 32*32   ; Full tilemap
-    xor a          ; Tile index 0
-.map_loop:
+    
+    ; Create solid white tile at $8010  
+    ; White = color 0 (all bits clear)
+    ld hl, $8010   ; Explicitly set HL to tile 1 location
+    ld b, 16
+    xor a          ; A = 0
+.tile_loop2:
     ld [hl+], a
-    dec bc
-    ld a, b
-    or c
-    jr nz, .map_loop
+    dec b
+    jr nz, .tile_loop2
+    
+    ; Fill background tilemap at $9800 with checkerboard pattern
+    ; Alternating tiles 0 (black) and 1 (white)
+    ld hl, $9800
+    ld d, 0        ; Row counter (0-17)
+.row_loop:
+    ld e, 0        ; Column counter (0-19)
+.tile_loop_map:
+    ld a, d
+    and 1          ; Check if row is odd/even
+    ld b, a        ; Save row parity
+    ld a, e
+    and 1          ; Check if column is odd/even
+    xor b          ; XOR with row parity for checkerboard
+    ld [hl+], a    ; Write tile index (0 or 1)
+    inc e
+    ld a, e
+    cp 20          ; Check if we've done 20 tiles
+    jr nz, .tile_loop_map
+    
+    ; Skip to next row (32 - 20 = 12 tiles)
+    push bc
+    ld bc, 12
+    add hl, bc
+    pop bc
+    
+    inc d
+    ld a, d
+    cp 18          ; Check if we've done 18 rows
+    jr nz, .row_loop
 
     ; Set palette (BGP)
-    ; 11 10 01 00 = white, light gray, dark gray, black
+    ; 11 10 01 00 = black, dark gray, light gray, white
     ld a, %11100100
     ld [$FF47], a  ; BGP
 
@@ -96,9 +131,9 @@ Start:
     ld [$FF43], a  ; SCX = 0
 
     ; Turn on LCD with BG enabled
-    ld a, %10000001  ; LCD on, BG on, BG tilemap at $9800, BG tiles at $8000
+    ld a, %10010001  ; LCD on, BG tiles at $8000, BG on, BG tilemap at $9800
     ld [$FF40], a    ; LCDC
-
+    
     ; Infinite loop
 .halt_loop:
     halt
