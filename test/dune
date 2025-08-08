@@ -1,0 +1,19 @@
+(test
+ (name oracle_lockstep)
+ (libraries core alcotest core_unix core_unix.sys_unix)
+ (deps
+  (source_tree ../roms)
+  (source_tree ../tools))
+ (action
+  (progn
+   (run %{test}))))
+
+(rule
+ (alias runtest)
+ (deps
+  ../roms/flat_bg.gb
+  ../tools/sameboy_headless)
+ (action
+  (progn
+   (run make -C ../roms)
+   (run make -C ../tools))))

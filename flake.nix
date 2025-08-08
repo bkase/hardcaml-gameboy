@@ -22,6 +22,13 @@
             # Build tools
             gnumake
             pkg-config
+            clang
+            
+            # GameBoy ROM development
+            rgbds
+            
+            # Image processing for test diffs
+            imagemagick
             
             # Additional tools for opam
             git
@@ -38,7 +45,7 @@
             echo ""
             echo "First time setup:"
             echo "  opam init --disable-sandboxing"
-            echo "  opam install hardcaml --yes"
+            echo "  opam install . --deps-only --yes"
             echo ""
             echo "Then run 'make info' to see available commands"
           '';

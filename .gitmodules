@@ -1,0 +1,6 @@
+[submodule "vendor/SameBoy"]
+	path = vendor/SameBoy
+	url = https://github.com/LIJI32/SameBoy
+[submodule "vendor/cppp"]
+	path = vendor/cppp
+	url = https://github.com/BR903/cppp.git

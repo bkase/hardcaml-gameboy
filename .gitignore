@@ -55,3 +55,22 @@ _doc/
 *.vhdl
 build/
 out/
+
+# Test artifacts
+_artifacts/
+_oracle/
+_dut/
+
+# ROM build artifacts
+roms/*.o
+roms/*.gb
+
+# Tool build artifacts
+tools/sameboy_headless
+
+# SameBoy build
+vendor/SameBoy/build/
+
+# cppp build
+vendor/cppp/*.o
+vendor/cppp/cppp
