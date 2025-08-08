@@ -1,0 +1,57 @@
+# OCaml build artifacts
+_build/
+*.byte
+*.native
+
+# Dune build files
+.merlin
+.merlin-conf
+dune-project.user
+
+# OCaml object files
+*.cmi
+*.cmo
+*.cma
+*.cmx
+*.cmxa
+*.cmxs
+*.o
+*.a
+
+# opam local switch
+_opam/
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Backup files
+*.bak
+
+# Test coverage
+_coverage/
+*.coverage
+
+# Documentation build
+_doc/
+*.odoc
+
+# Logs
+*.log
+
+# Waveform files
+*.vcd
+*.fst
+
+# Generated Verilog/VHDL
+*.v
+*.vhd
+*.vhdl
+build/
+out/
