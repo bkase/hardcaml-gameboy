@@ -9,6 +9,10 @@ let oracle_dir = "_oracle"
 let dut_dir = "_dut" 
 let artifacts_dir = "../_artifacts"
 
+(* Oracle frame count - Need 300 frames for flat_bg.gb to fully initialize
+   with boot ROM sequence and start displaying stable checkerboard pattern *)
+let oracle_frame_count = 300
+
 (* Working with RGB555 pixels directly as int values *)
 
 
@@ -43,14 +47,14 @@ let run_hardcaml_dut ~rom:_ ~output_dir ~lines =
     framebuffer_data.(addr) <- Bits.to_int !(outputs.b_rdata);
   done;
   
-  (* Extract RGB555 pixels - only extract requested lines *)
+  (* Extract RGB555 pixels - extract requested lines *)
   let pixels = Array.init (160 * lines) ~f:(fun i ->
     framebuffer_data.(i)
   ) in
   
   (* Create output directory and save as RGB555 *)
   Core_unix.mkdir_p output_dir;
-  let rgb555_path = output_dir ^ "/frame_0300.rgb555" in
+  let rgb555_path = output_dir ^ Printf.sprintf "/frame_%04d.rgb555" oracle_frame_count in
   let oc = Out_channel.create rgb555_path in
   Array.iter pixels ~f:(fun rgb555 ->
     (* Write as little-endian 16-bit value *)
@@ -66,8 +70,8 @@ let run_oracle ~rom ~output_dir:_ =
   (* Use sameboy_headless tool from _build directory *)
   let sameboy_tool = "./sameboy_headless" in
   
-  (* Run sameboy_headless - need 300 frames for flat_bg.gb to fully initialize with boot ROM *)
-  let cmd = Printf.sprintf "%s %s 300" sameboy_tool rom in
+  (* Run sameboy_headless - need frames for flat_bg.gb to fully initialize with boot ROM *)
+  let cmd = Printf.sprintf "%s %s %d" sameboy_tool rom oracle_frame_count in
   Printf.printf "Running oracle: %s\n" cmd;
   
   (* Capture stdout from sameboy_headless, redirect stderr to /dev/null *)
@@ -88,8 +92,8 @@ let run_oracle ~rom ~output_dir:_ =
   
   match result with
   | WEXITED 0 when total_bytes_read = (160 * 144 * 2) ->
-    (* Parse RGB555 data from stdout and extract first two lines *)
-    let pixels = Array.init (160 * 2) ~f:(fun i ->
+    (* Parse RGB555 data from stdout for full frame *)
+    let pixels = Array.init (160 * 144) ~f:(fun i ->
       let offset = i * 2 in
       let low_byte = Char.to_int (Bytes.get buf offset) in
       let high_byte = Char.to_int (Bytes.get buf (offset + 1)) in
@@ -189,14 +193,14 @@ let test_lockstep () =
   
   (* Run DUT (HardCaml simulation) *)
   Printf.printf "Running DUT (HardCaml simulation)...\n";
-  let dut_pixels = run_hardcaml_dut ~rom ~output_dir:dut_output ~lines:2 in
+  let dut_pixels = run_hardcaml_dut ~rom ~output_dir:dut_output ~lines:144 in
   
   (* Compare *)
-  Printf.printf "Comparing pixel streams (first 2 lines)...\n";
+  Printf.printf "Comparing pixel streams (full frame)...\n";
   let mismatches = compare_pixels ~oracle:oracle_pixels ~dut:dut_pixels in
   
   if List.is_empty mismatches then begin
-    Printf.printf "✓ All pixels match! (2 lines, 320 pixels)\n";
+    Printf.printf "✓ All pixels match! (full frame, 23040 pixels)\n";
     Alcotest.(check bool) "pixels match" true true
   end else begin
     Printf.printf "✗ Found %d pixel mismatches\n" (List.length mismatches);
@@ -210,6 +214,6 @@ let () =
   let open Alcotest in
   run "Oracle Lockstep Tests" [
     "differential", [
-      test_case "SameBoy vs DUT (2 lines)" `Quick test_lockstep;
+      test_case "SameBoy vs DUT (full frame)" `Quick test_lockstep;
     ];
   ]
