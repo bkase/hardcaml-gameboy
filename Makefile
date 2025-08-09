@@ -37,36 +37,36 @@ test: tools roms
 
 # ===== Tools Targets =====
 
-tools: _build/sameboy_headless
+tools: out/sameboy_headless
 
 # Build boot ROM from source
-_build/dmg_boot.bin: $(BOOT_ROM_SRC)
+out/dmg_boot.bin: $(BOOT_ROM_SRC)
 	@echo "Building boot ROM from source..."
-	@mkdir -p _build
-	$(RGBASM) -I$(SAMEBOY_DIR)/BootROMs -o _build/dmg_boot.o $(BOOT_ROM_SRC)
-	$(RGBLINK) -x -o $@ _build/dmg_boot.o
-	@rm -f _build/dmg_boot.o
+	@mkdir -p out
+	$(RGBASM) -I$(SAMEBOY_DIR)/BootROMs -o out/dmg_boot.o $(BOOT_ROM_SRC)
+	$(RGBLINK) -x -o $@ out/dmg_boot.o
+	@rm -f out/dmg_boot.o
 
-_build/boot_rom.h: _build/dmg_boot.bin
+out/boot_rom.h: out/dmg_boot.bin
 	@echo "Generating boot ROM header..."
-	@mkdir -p _build
-	cd _build && ../tools/bin2c.sh dmg_boot.bin boot_rom.h
+	@mkdir -p out
+	cd out && ../tools/bin2c.sh dmg_boot.bin boot_rom.h
 
-_build/sameboy_headless: tools/sameboy_headless.c _build/boot_rom.h
+out/sameboy_headless: tools/sameboy_headless.c out/boot_rom.h
 	@echo "Building sameboy_headless..."
-	@mkdir -p _build
-	$(CC) $(CFLAGS) -I_build -o $@ tools/sameboy_headless.c $(LDFLAGS)
+	@mkdir -p out
+	$(CC) $(CFLAGS) -Iout -o $@ tools/sameboy_headless.c $(LDFLAGS)
 
 # ===== ROMs Targets =====
 
-roms: _build/flat_bg.gb
+roms: out/flat_bg.gb
 
-_build/flat_bg.gb: roms/flat_bg.asm
+out/flat_bg.gb: roms/flat_bg.asm
 	@echo "Building test ROMs..."
-	@mkdir -p _build
-	$(RGBASM) -o _build/flat_bg.o roms/flat_bg.asm
-	$(RGBLINK) -o _build/flat_bg.gb _build/flat_bg.o
-	rgbfix -p 0xFF -v _build/flat_bg.gb
+	@mkdir -p out
+	$(RGBASM) -o out/flat_bg.o roms/flat_bg.asm
+	$(RGBLINK) -o out/flat_bg.gb out/flat_bg.o
+	rgbfix -p 0xFF -v out/flat_bg.gb
 
 # ===== Clean Target =====
 
@@ -74,8 +74,8 @@ _build/flat_bg.gb: roms/flat_bg.asm
 clean:
 	@echo "Cleaning build artifacts..."
 	dune clean
-	rm -f _build/sameboy_headless _build/boot_rom.h _build/dmg_boot.bin _build/dmg_boot.o
-	rm -f _build/flat_bg.gb _build/flat_bg.o
+	rm -f out/sameboy_headless out/boot_rom.h out/dmg_boot.bin out/dmg_boot.o
+	rm -f out/flat_bg.gb out/flat_bg.o
 
 # Enter development shell (requires nix)
 dev-shell:

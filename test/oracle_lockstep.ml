@@ -4,10 +4,10 @@ module Top = Ppu.Top_checker_to_framebuf
 
 (* Test configuration *)
 let rom_env_var = "ROM"
-let default_rom = "flat_bg.gb"
+let default_rom = "out/flat_bg.gb"
 let oracle_dir = "_oracle"
 let dut_dir = "_dut" 
-let artifacts_dir = "../_artifacts"
+let artifacts_dir = "_artifacts"
 
 (* Oracle frame count - Need 300 frames for flat_bg.gb to fully initialize
    with boot ROM sequence and start displaying stable checkerboard pattern *)
@@ -79,9 +79,9 @@ let run_hardcaml_dut ~rom:_ ~output_dir ~lines =
   pixels
 
 (* Run oracle (SameBoy) *)
-let run_oracle ~rom ~output_dir:_ =
-  (* Use sameboy_headless tool from _build directory *)
-  let sameboy_tool = "./sameboy_headless" in
+let run_oracle ~workspace_root ~rom ~output_dir:_ =
+  (* Use sameboy_headless tool from out directory *)
+  let sameboy_tool = workspace_root ^/ "out/sameboy_headless" in
   
   (* Run sameboy_headless - need frames for flat_bg.gb to fully initialize with boot ROM *)
   let cmd = Printf.sprintf "%s %s %d" sameboy_tool rom oracle_frame_count in
@@ -135,9 +135,10 @@ let compare_pixels ~oracle ~dut =
   List.rev !mismatches
 
 (* Write comparison artifacts *)
-let write_artifacts ~rom_name ~oracle ~dut ~mismatches =
-  Core_unix.mkdir_p artifacts_dir;
-  let artifacts_rom_dir = artifacts_dir ^/ rom_name in
+let write_artifacts ~workspace_root ~rom_name ~oracle ~dut ~mismatches =
+  let abs_artifacts_dir = workspace_root ^/ artifacts_dir in
+  Core_unix.mkdir_p abs_artifacts_dir;
+  let artifacts_rom_dir = abs_artifacts_dir ^/ rom_name in
   Core_unix.mkdir_p artifacts_rom_dir;
   
   (* Write CSVs *)
@@ -181,28 +182,33 @@ let write_artifacts ~rom_name ~oracle ~dut ~mismatches =
 
 (* Main test *)
 let test_lockstep () =
-  (* Ensure we're running from the _build directory *)
-  let cwd = Sys_unix.getcwd () in
-  if String.is_suffix cwd ~suffix:"_build/default/test" then
-    Sys_unix.chdir "../../../_build"
-  else if not (String.is_suffix cwd ~suffix:"_build") then
-    Sys_unix.chdir "_build";
+  (* Get workspace root - no need to change directories *)
+  let workspace_root = 
+    let cwd = Sys_unix.getcwd () in
+    if String.is_suffix cwd ~suffix:"/_build/default/test" then
+      (* We're in the dune build directory, go up to project root *)
+      cwd |> Filename.dirname |> Filename.dirname |> Filename.dirname
+    else
+      match Sys.getenv "DUNE_WORKSPACE_ROOT" with
+      | Some root -> if Filename.is_absolute root then root else Filename.concat cwd root
+      | None -> cwd
+  in
   
   let rom = 
     match Sys.getenv rom_env_var with
-    | Some r -> r
-    | None -> default_rom
+    | Some r -> if Filename.is_absolute r then r else workspace_root ^/ r
+    | None -> workspace_root ^/ default_rom
   in
   
   let rom_name = Filename.basename rom |> Filename.chop_extension in
-  let oracle_output = oracle_dir ^/ rom_name in
-  let dut_output = dut_dir ^/ rom_name in
+  let oracle_output = workspace_root ^/ oracle_dir ^/ rom_name in
+  let dut_output = workspace_root ^/ dut_dir ^/ rom_name in
   
   Printf.printf "Testing with ROM: %s\n" rom;
   
   (* Run oracle *)
   Printf.printf "Running oracle (SameBoy)...\n";
-  let oracle_pixels = run_oracle ~rom ~output_dir:oracle_output in
+  let oracle_pixels = run_oracle ~workspace_root ~rom ~output_dir:oracle_output in
   
   (* Run DUT (HardCaml simulation) *)
   Printf.printf "Running DUT (HardCaml simulation)...\n";
@@ -217,8 +223,8 @@ let test_lockstep () =
     Alcotest.(check bool) "pixels match" true true
   end else begin
     Printf.printf "✗ Found %d pixel mismatches\n" (List.length mismatches);
-    write_artifacts ~rom_name ~oracle:oracle_pixels ~dut:dut_pixels ~mismatches;
-    Printf.printf "Artifacts written to %s/%s/\n" artifacts_dir rom_name;
+    write_artifacts ~workspace_root ~rom_name ~oracle:oracle_pixels ~dut:dut_pixels ~mismatches;
+    Printf.printf "Artifacts written to %s/%s/\n" (workspace_root ^/ artifacts_dir) rom_name;
     Alcotest.fail (Printf.sprintf "%d pixels don't match" (List.length mismatches))
   end
 
