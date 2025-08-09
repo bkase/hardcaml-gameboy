@@ -1,5 +1,5 @@
 (executable
  (public_name hardcaml-hello)
  (name main)
- (libraries base stdio core unix hardcaml)
+ (libraries core stdio unix hardcaml)
  (preprocess (pps ppx_hardcaml)))

@@ -16,7 +16,6 @@
    hardcaml
    hardcaml_waveterm
    core
-   base
    core_unix 
    core_unix.sys_unix
    ppu)
