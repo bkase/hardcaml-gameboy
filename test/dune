@@ -28,3 +28,11 @@
   (progn
    (run %{test}))))
 
+(executable
+ (name test_framebuf_assertion)
+ (libraries 
+   hardcaml
+   base
+   stdio
+   ppu))
+
