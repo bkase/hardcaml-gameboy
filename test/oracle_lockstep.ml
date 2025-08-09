@@ -71,7 +71,7 @@ let run_hardcaml_dut ~rom:_ ~output_dir ~lines =
   (* Create output directory and save as RGB555 *)
   Core_unix.mkdir_p output_dir ;
   let rgb555_path =
-    output_dir ^ Printf.sprintf "/frame_%04d.rgb555" frames_after_boot_sequence
+    output_dir ^/ Printf.sprintf "frame_%04d.rgb555" frames_after_boot_sequence
   in
   let oc = Out_channel.create rgb555_path in
   Array.iter pixels ~f:(fun rgb555 ->
