@@ -26,7 +26,7 @@ end
 
 (** Create checker_fill FSM that generates 8×8 checkerboard pattern
     - Pattern: (x>>3 XOR y>>3) & 1 determines color
-    - Red (0x7C00) for pattern=0, Black (0x0000) for pattern=1
+    - White (0x7FFF) for pattern=0, Black (0x0000) for pattern=1
     - 1 pixel per clock cycle throughput
     - Total 23,040 cycles to fill entire frame *)
 val create : Scope.t -> Signal.t I.t -> Signal.t O.t
