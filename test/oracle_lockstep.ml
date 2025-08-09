@@ -39,13 +39,26 @@ let run_hardcaml_dut ~rom:_ ~output_dir ~lines =
     Cyclesim.cycle sim;
   done;
   
-  (* Read framebuffer data *)
+  (* Read framebuffer data efficiently by pipelining address setup and data read *)
   let framebuffer_data = Array.create ~len:total_pixels 0 in
-  for addr = 0 to total_pixels - 1 do
-    inputs.b_addr := Bits.of_int ~width:15 addr;
-    Cyclesim.cycle sim;  (* Wait for read latency *)
-    framebuffer_data.(addr) <- Bits.to_int !(outputs.b_rdata);
-  done;
+  
+  if total_pixels > 0 then begin
+    (* Set up the first address *)
+    inputs.b_addr := Bits.of_int ~width:15 0;
+    Cyclesim.cycle sim;
+    
+    (* Pipeline the remaining reads - set next address while reading current data *)
+    for addr = 0 to total_pixels - 1 do
+      (* Read current data *)
+      framebuffer_data.(addr) <- Bits.to_int !(outputs.b_rdata);
+      
+      (* Set up next address (if not the last iteration) *)
+      if addr < total_pixels - 1 then begin
+        inputs.b_addr := Bits.of_int ~width:15 (addr + 1);
+        Cyclesim.cycle sim;
+      end
+    done;
+  end;
   
   (* Extract RGB555 pixels - extract requested lines *)
   let pixels = Array.init (160 * lines) ~f:(fun i ->
