@@ -27,7 +27,7 @@ static void vblank_callback(GB_gameboy_t *gb, GB_vblank_type_t type) {
 }
 
 static uint32_t rgb_encode(GB_gameboy_t *gb, uint8_t r, uint8_t g, uint8_t b) {
-    // Encode RGB to RGBA format
+    // Encode RGB to internal format
     return (r << 24) | (g << 16) | (b << 8) | 0xFF;
 }
 
