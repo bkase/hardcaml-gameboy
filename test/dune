@@ -1,12 +1,14 @@
 (rule
  (targets tools_and_roms_built)
  (deps
-  (source_tree ../tools)
-  (source_tree ../roms)
-  (source_tree ../vendor))
+  ../tools/sameboy_headless.c
+  ../tools/bin2c.sh
+  ../vendor/SameBoy/BootROMs/dmg_boot.asm
+  ../roms/flat_bg.asm
+  (source_tree ../vendor/SameBoy))
  (action
   (progn
-   (run make -C .. tools roms)
+   (chdir %{workspace_root} (run make tools roms))
    (with-stdout-to %{targets} (echo "done")))))
 
 (test
