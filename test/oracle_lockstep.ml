@@ -13,9 +13,11 @@ let dut_dir = "_dut"
 
 let artifacts_dir = "_artifacts"
 
-(* Oracle frame count - Need 300 frames for flat_bg.gb to fully initialize with boot ROM
-   sequence and start displaying stable checkerboard pattern *)
-let oracle_frame_count = 300
+(* Number of frames to wait for boot sequence completion and stable checkerboard display.
+   The GameBoy boot ROM takes time to initialize, and the flat_bg.gb ROM needs additional
+   frames to establish a stable checkerboard pattern before reliable comparison can
+   begin. *)
+let frames_after_boot_sequence = 300
 
 (* Working with RGB555 pixels directly as int values *)
 
@@ -68,7 +70,9 @@ let run_hardcaml_dut ~rom:_ ~output_dir ~lines =
 
   (* Create output directory and save as RGB555 *)
   Core_unix.mkdir_p output_dir ;
-  let rgb555_path = output_dir ^ Printf.sprintf "/frame_%04d.rgb555" oracle_frame_count in
+  let rgb555_path =
+    output_dir ^ Printf.sprintf "/frame_%04d.rgb555" frames_after_boot_sequence
+  in
   let oc = Out_channel.create rgb555_path in
   Array.iter pixels ~f:(fun rgb555 ->
       (* Write as little-endian 16-bit value *)
@@ -85,7 +89,7 @@ let run_oracle ~workspace_root ~rom ~output_dir:_ =
 
   (* Run sameboy_headless - need frames for flat_bg.gb to fully initialize with boot
      ROM *)
-  let cmd = Printf.sprintf "%s %s %d" sameboy_tool rom oracle_frame_count in
+  let cmd = Printf.sprintf "%s %s %d" sameboy_tool rom frames_after_boot_sequence in
   Printf.printf "Running oracle: %s\n" cmd ;
 
   (* Capture stdout from sameboy_headless, redirect stderr to /dev/null *)
