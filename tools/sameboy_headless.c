@@ -31,9 +31,9 @@ static uint32_t rgb_encode(GB_gameboy_t *gb, uint8_t r, uint8_t g, uint8_t b) {
     return (r << 24) | (g << 16) | (b << 8) | 0xFF;
 }
 
-static void save_frame_rgba(const char *output_dir, int frame_num) {
+static void save_frame_rgb555(const char *output_dir, int frame_num) {
     char path[1024];
-    snprintf(path, sizeof(path), "%s/frame_%04d.rgba", output_dir, frame_num);
+    snprintf(path, sizeof(path), "%s/frame_%04d.rgb555", output_dir, frame_num);
     
     FILE *f = fopen(path, "wb");
     if (!f) {
@@ -41,16 +41,27 @@ static void save_frame_rgba(const char *output_dir, int frame_num) {
         return;
     }
     
-    // Write raw RGBA data
+    // Write raw RGB555 data
     for (int i = 0; i < 160 * 144; i++) {
         uint32_t pixel = pixel_buffer[i];
-        uint8_t rgba[4] = {
-            (pixel >> 24) & 0xFF,  // R
-            (pixel >> 16) & 0xFF,  // G
-            (pixel >> 8) & 0xFF,   // B
-            pixel & 0xFF           // A
+        uint8_t r8 = (pixel >> 24) & 0xFF;  // R
+        uint8_t g8 = (pixel >> 16) & 0xFF;  // G
+        uint8_t b8 = (pixel >> 8) & 0xFF;   // B
+        
+        // Convert 8-bit RGB to 5-bit RGB555 format
+        uint8_t r5 = (r8 * 31) / 255;
+        uint8_t g5 = (g8 * 31) / 255; 
+        uint8_t b5 = (b8 * 31) / 255;
+        
+        // Pack into 16-bit RGB555: RRRRRGGGGGBBBBB
+        uint16_t rgb555 = (r5 << 10) | (g5 << 5) | b5;
+        
+        // Write as little-endian 16-bit value
+        uint8_t bytes[2] = {
+            rgb555 & 0xFF,         // Low byte
+            (rgb555 >> 8) & 0xFF   // High byte
         };
-        fwrite(rgba, 1, 4, f);
+        fwrite(bytes, 1, 2, f);
     }
     
     fclose(f);
@@ -167,7 +178,7 @@ int main(int argc, char **argv) {
             if (enable_debug) {
                 printf("Saving frame %d...\n", saved_frames);
             }
-            save_frame_rgba(output_dir, saved_frames);
+            save_frame_rgb555(output_dir, saved_frames);
             save_frame_ppm(output_dir, saved_frames);
         }
     }

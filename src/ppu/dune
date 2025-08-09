@@ -1,0 +1,5 @@
+(library
+ (name ppu)
+ (public_name hardcaml-gameboy.ppu)
+ (libraries hardcaml base)
+ (preprocess (pps ppx_hardcaml)))

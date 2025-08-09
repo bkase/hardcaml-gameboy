@@ -19,27 +19,26 @@ module Counter = struct
     } [@@deriving sexp_of, hardcaml]
   end
 
-  let create scope (inputs : _ I.t) =
+  let create _scope (inputs : _ I.t) =
     let spec = Reg_spec.create ~clock:inputs.clock ~clear:inputs.clear () in
-    let count_reg = reg spec ~enable:inputs.incr ~width:8 (zero 8) in
-    let count = count_reg +:. 1 in
-    { O.count = reg spec ~enable:inputs.incr ~width:8 count }
+    let count = reg_fb spec ~enable:inputs.incr ~width:8 ~f:(fun d -> d +:. 1) in
+    { O.count = count }
 end
 
 (* Simulation and testing *)
 module Sim = struct
+  module Sim_if = Cyclesim.With_interface (Counter.I) (Counter.O)
+  
   let create_sim () =
-    let scope = Scope.create ~flatten_design:true () in
-    let sim = Cyclesim.create ~config:Cyclesim.Config.trace_all (Counter.create scope) in
-    sim
+    Sim_if.create ~config:Cyclesim.Config.trace_all Counter.create
 
   let run_simulation () =
     printf "Creating HardCaml counter simulation...\n%!";
     
     let sim = create_sim () in
-    let inputs = Cyclesim.inputs sim in
-    let outputs = Cyclesim.outputs sim in
-    let waves = Cyclesim.waveform sim in
+    let inputs = Sim_if.inputs sim in
+    let outputs = Sim_if.outputs sim in
+    let waves = Sim_if.waveform sim in
     
     (* Initialize inputs *)
     inputs.clock := Bits.vdd;
@@ -57,7 +56,7 @@ module Sim = struct
       inputs.incr := if cycle > 1 then Bits.vdd else Bits.gnd;
       
       (* Cycle simulation *)
-      Cyclesim.cycle sim;
+      Sim_if.cycle sim;
       
       (* Read outputs *)
       let count_val = Bits.to_int !(outputs.count) in

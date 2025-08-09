@@ -39,6 +39,9 @@
           ];
           
           shellHook = ''
+            # Set macOS deployment target to avoid linker warnings
+            export MACOSX_DEPLOYMENT_TARGET=15.0
+            
             # Set up opam environment if it's initialized
             if [ -d "$HOME/.opam" ]; then
               eval $(opam env --shell=bash 2>/dev/null)

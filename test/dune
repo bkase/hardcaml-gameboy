@@ -11,11 +11,18 @@
 
 (test
  (name oracle_lockstep)
- (libraries core alcotest core_unix core_unix.sys_unix)
+ (libraries 
+   alcotest
+   hardcaml
+   hardcaml_waveterm
+   core
+   base
+   core_unix 
+   core_unix.sys_unix
+   ppu)
  (deps
-  tools_and_roms_built
-  ../roms/flat_bg.gb
-  ../tools/sameboy_headless)
+  tools_and_roms_built)
  (action
   (progn
    (run %{test}))))
+

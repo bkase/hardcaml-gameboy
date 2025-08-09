@@ -37,30 +37,36 @@ test: tools roms
 
 # ===== Tools Targets =====
 
-tools: tools/sameboy_headless
+tools: _build/sameboy_headless
 
 # Build boot ROM from source
-tools/dmg_boot.bin: $(BOOT_ROM_SRC)
+_build/dmg_boot.bin: $(BOOT_ROM_SRC)
 	@echo "Building boot ROM from source..."
-	$(RGBASM) -I$(SAMEBOY_DIR)/BootROMs -o tools/dmg_boot.o $(BOOT_ROM_SRC)
-	$(RGBLINK) -x -o $@ tools/dmg_boot.o
-	@rm -f tools/dmg_boot.o
+	@mkdir -p _build
+	$(RGBASM) -I$(SAMEBOY_DIR)/BootROMs -o _build/dmg_boot.o $(BOOT_ROM_SRC)
+	$(RGBLINK) -x -o $@ _build/dmg_boot.o
+	@rm -f _build/dmg_boot.o
 
-tools/boot_rom.h: tools/dmg_boot.bin
+_build/boot_rom.h: _build/dmg_boot.bin
 	@echo "Generating boot ROM header..."
-	cd tools && ./bin2c.sh dmg_boot.bin boot_rom.h
+	@mkdir -p _build
+	cd _build && ../tools/bin2c.sh dmg_boot.bin boot_rom.h
 
-tools/sameboy_headless: tools/sameboy_headless.c tools/boot_rom.h
+_build/sameboy_headless: tools/sameboy_headless.c _build/boot_rom.h
 	@echo "Building sameboy_headless..."
-	$(CC) $(CFLAGS) -o $@ tools/sameboy_headless.c $(LDFLAGS)
+	@mkdir -p _build
+	$(CC) $(CFLAGS) -I_build -o $@ tools/sameboy_headless.c $(LDFLAGS)
 
 # ===== ROMs Targets =====
 
-roms: roms/flat_bg.gb
+roms: _build/flat_bg.gb
 
-roms/flat_bg.gb: roms/flat_bg.asm
+_build/flat_bg.gb: roms/flat_bg.asm
 	@echo "Building test ROMs..."
-	$(MAKE) -C roms
+	@mkdir -p _build
+	$(RGBASM) -o _build/flat_bg.o roms/flat_bg.asm
+	$(RGBLINK) -o _build/flat_bg.gb _build/flat_bg.o
+	rgbfix -p 0xFF -v _build/flat_bg.gb
 
 # ===== Clean Target =====
 
@@ -68,8 +74,8 @@ roms/flat_bg.gb: roms/flat_bg.asm
 clean:
 	@echo "Cleaning build artifacts..."
 	dune clean
-	rm -f tools/sameboy_headless tools/boot_rom.h tools/dmg_boot.bin tools/dmg_boot.o
-	rm -f roms/*.gb roms/*.o
+	rm -f _build/sameboy_headless _build/boot_rom.h _build/dmg_boot.bin _build/dmg_boot.o
+	rm -f _build/flat_bg.gb _build/flat_bg.o
 
 # Enter development shell (requires nix)
 dev-shell:
