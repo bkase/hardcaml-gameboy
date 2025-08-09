@@ -1,0 +1,6 @@
+(executable
+ (public_name hardcaml-synthesize)
+ (name synthesize)
+ (libraries core stdio unix hardcaml ppu)
+ (preprocess (pps ppx_hardcaml))
+ (flags (:standard -w +26+8+11 -warn-error +26+8+11)))

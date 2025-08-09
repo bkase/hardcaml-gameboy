@@ -65,6 +65,9 @@ make test
 # Build only the OCaml project
 make build
 
+# Generate synthesizable Verilog from HardCaml modules
+make synth
+
 # Format OCaml code
 make format
 
@@ -118,6 +121,55 @@ make roms          # Build test ROMs
 make build         # Build OCaml project
 ```
 
+## Hardware Synthesis
+
+The project can generate synthesizable Verilog from the HardCaml modules for FPGA implementation:
+
+```bash
+# Generate Verilog files from all HardCaml modules
+make synth
+```
+
+This creates Verilog files in the `synth/` directory:
+- `checker_fill.v` - Checkerboard pattern generator FSM
+- `framebuf.v` - Dual-port framebuffer memory
+- `top_checker_to_framebuf.v` - Top-level PPU module
+
+### Synthesis Features
+
+- **Clean Verilog Output**: HardCaml generates readable, synthesizable Verilog
+- **Memory Inference**: Framebuffer uses inferred block RAM primitives  
+- **Clock Domain**: Single clock design with asynchronous reset
+- **Timing Constraints**: Constraint files provided for various FPGA vendors
+
+### FPGA Constraints
+
+Timing constraint files are provided in `constraints/` for different FPGA vendors:
+
+```
+constraints/
+├── generic/          # Generic SDC constraints
+├── xilinx/          # Xilinx XDC constraints  
+├── intel/           # Intel/Altera SDC constraints
+├── gowin/           # Gowin-specific constraints
+└── lattice/         # Lattice-specific constraints
+```
+
+**Clock Specifications:**
+- System Clock: 4.194304 MHz (238.42 ns period) - Original GameBoy frequency
+- Reset: Asynchronous active-high reset
+- Memory: Block RAM inference for framebuffer storage
+
+### Synthesis Workflow
+
+1. **Generate Verilog**: `make synth` creates synthesizable RTL
+2. **Choose Constraints**: Select appropriate constraint file for your FPGA
+3. **Run Synthesis**: Use vendor tools (Vivado, Quartus, etc.) to synthesize
+4. **Place & Route**: Apply timing constraints during implementation
+5. **Generate Bitstream**: Create FPGA configuration file
+
+The generated Verilog is vendor-neutral and should work with most FPGA synthesis tools.
+
 ## Project Structure
 
 ```
@@ -128,6 +180,10 @@ src/
     ├── framebuf.ml           # Framebuffer interface
     └── top_checker_to_framebuf.ml  # Top-level PPU module
 
+synth_tool/
+├── synthesize.ml             # Verilog generation tool
+└── dune                      # Build configuration for synthesis tool
+
 test/
 └── oracle_lockstep.ml        # Oracle-based differential testing
 
@@ -137,6 +193,18 @@ tools/
 
 roms/
 └── flat_bg.asm              # Test ROM generating checkerboard
+
+constraints/                   # FPGA timing constraints
+├── generic/                  # Generic SDC constraints
+├── xilinx/                   # Xilinx XDC constraints
+├── intel/                    # Intel/Altera constraints
+├── gowin/                    # Gowin constraints
+└── lattice/                  # Lattice constraints
+
+synth/                        # Generated Verilog files (created by make synth)
+├── checker_fill.v           # Synthesizable checkerboard generator
+├── framebuf.v              # Synthesizable framebuffer
+└── top_checker_to_framebuf.v # Top-level synthesizable module
 
 vendor/
 └── SameBoy/                 # Reference GameBoy emulator

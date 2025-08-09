@@ -1,4 +1,4 @@
-.PHONY: all build run clean dev-shell test tools roms vendor submodules format check-format
+.PHONY: all build run clean dev-shell test tools roms vendor submodules format check-format synth
 
 # ===== Configuration =====
 # SameBoy paths
@@ -14,6 +14,10 @@ LDFLAGS = -L$(SAMEBOY_BUILD)/lib -lsameboy -lm
 # Assembly tools
 RGBASM = rgbasm
 RGBLINK = rgblink
+
+# Synthesis settings
+SYNTH_DIR = synth
+CONSTRAINTS_DIR = constraints
 
 # ===== Main Targets =====
 
@@ -34,6 +38,15 @@ run: build
 test: tools roms
 	@echo "Running oracle lockstep tests..."
 	dune test
+
+# ===== Synthesis Targets =====
+
+# Generate Verilog from HardCaml modules
+synth: build
+	@echo "Generating Verilog from HardCaml modules..."
+	@mkdir -p $(SYNTH_DIR)
+	dune exec ./synth_tool/synthesize.exe
+	@echo "Verilog files generated in $(SYNTH_DIR)/"
 
 # ===== Formatting Targets =====
 
@@ -106,6 +119,7 @@ clean:
 	dune clean
 	rm -f out/sameboy_headless out/boot_rom.h out/dmg_boot.bin out/dmg_boot.o
 	rm -f out/flat_bg.gb out/flat_bg.o
+	rm -rf $(SYNTH_DIR)
 
 # Clean vendor builds too
 clean-vendor:
@@ -124,21 +138,28 @@ demo: build run
 
 # Show project structure
 info:
-	@echo "HardCaml Project Structure:"
-	@echo "=========================="
+	@echo "HardCaml GameBoy Project Structure:"
+	@echo "==================================="
 	@echo "flake.nix          - Nix flake with OCaml 5 + HardCaml + Z3"
 	@echo "dune-project       - Dune project configuration"
-	@echo "src/main.ml        - HardCaml counter example with SMT verification"
-	@echo "src/dune           - Dune build file"
-	@echo "Makefile           - This makefile"
+	@echo "src/ppu/           - PPU implementation modules"
+	@echo "synth_tool/        - Verilog synthesis tool"
+	@echo "constraints/       - FPGA timing constraints"
+	@echo "test/              - Oracle lockstep testing"
+	@echo "tools/             - SameBoy integration tools"
+	@echo "roms/              - Test ROM sources"
 	@echo ""
-	@echo "Commands:"
-	@echo "  make dev-shell   - Enter Nix development environment"
-	@echo "  make build       - Build the project"
-	@echo "  make run         - Run the example"
-	@echo "  make test        - Run oracle lockstep tests"
-	@echo "  make format      - Format all OCaml source files"
-	@echo "  make check-format - Check if files are properly formatted"
-	@echo "  make demo        - Build and run"
-	@echo "  make clean       - Clean build artifacts"
-	@echo "  make info        - Show this information"
+	@echo "Main Commands:"
+	@echo "  make dev-shell     - Enter Nix development environment"
+	@echo "  make build         - Build the OCaml project"
+	@echo "  make synth         - Generate synthesizable Verilog"
+	@echo "  make test          - Run oracle lockstep tests against SameBoy"
+	@echo "  make format        - Format all OCaml source files"
+	@echo "  make check-format  - Check if files are properly formatted"
+	@echo "  make clean         - Clean build artifacts"
+	@echo "  make info          - Show this information"
+	@echo ""
+	@echo "Synthesis Output:"
+	@echo "  synth/checker_fill.v           - Checkerboard pattern generator"
+	@echo "  synth/framebuf.v              - Dual-port framebuffer memory"
+	@echo "  synth/top_checker_to_framebuf.v - Top-level PPU module"
