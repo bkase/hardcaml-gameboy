@@ -4,10 +4,7 @@ open Hardcaml
 
 module I : sig
   type 'a t =
-    { clock : 'a
-    ; reset : 'a
-    ; start : 'a (* Pulse high for one cycle to begin filling *)
-    }
+    { clock : 'a; reset : 'a; start : 'a (* Pulse high for one cycle to begin filling *) }
   [@@deriving hardcaml]
 end
 

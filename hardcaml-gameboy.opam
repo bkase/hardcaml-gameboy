@@ -20,6 +20,7 @@ depends: [
   "alcotest" {with-test}
   "ppx_deriving" {>= "5.0"}
   "ppx_jane"
+  "ocamlformat" {>= "0.26.0" & with-dev-setup}
 ]
 build: [
   ["dune" "subst"] {dev}

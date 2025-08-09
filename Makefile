@@ -1,4 +1,4 @@
-.PHONY: all build run clean dev-shell test tools roms vendor submodules
+.PHONY: all build run clean dev-shell test tools roms vendor submodules format check-format
 
 # ===== Configuration =====
 # SameBoy paths
@@ -34,6 +34,23 @@ run: build
 test: tools roms
 	@echo "Running oracle lockstep tests..."
 	dune test
+
+# ===== Formatting Targets =====
+
+# Format all OCaml source files
+format:
+	@echo "Formatting OCaml source files..."
+	cx ocamlformat --inplace $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build")
+
+# Check if files are properly formatted (non-zero exit if not formatted)
+check-format:
+	@echo "Checking OCaml code formatting..."
+	@if ! cx ocamlformat --check $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build"); then \
+		echo "Code is not properly formatted. Run 'make format' to fix."; \
+		exit 1; \
+	else \
+		echo "All OCaml files are properly formatted."; \
+	fi
 
 # ===== Vendor Targets =====
 
@@ -119,6 +136,9 @@ info:
 	@echo "  make dev-shell   - Enter Nix development environment"
 	@echo "  make build       - Build the project"
 	@echo "  make run         - Run the example"
+	@echo "  make test        - Run oracle lockstep tests"
+	@echo "  make format      - Format all OCaml source files"
+	@echo "  make check-format - Check if files are properly formatted"
 	@echo "  make demo        - Build and run"
 	@echo "  make clean       - Clean build artifacts"
 	@echo "  make info        - Show this information"
