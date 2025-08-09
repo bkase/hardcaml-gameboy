@@ -219,8 +219,7 @@ let test_lockstep () =
   let mismatches = compare_pixels ~oracle:oracle_pixels ~dut:dut_pixels in
   
   if List.is_empty mismatches then begin
-    Printf.printf "✓ All pixels match! (full frame, 23040 pixels)\n";
-    Alcotest.(check bool) "pixels match" true true
+    Printf.printf "✓ All pixels match! (full frame, 23040 pixels)\n"
   end else begin
     Printf.printf "✗ Found %d pixel mismatches\n" (List.length mismatches);
     write_artifacts ~workspace_root ~rom_name ~oracle:oracle_pixels ~dut:dut_pixels ~mismatches;
