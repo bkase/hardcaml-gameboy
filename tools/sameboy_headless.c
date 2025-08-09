@@ -31,17 +31,13 @@ static uint32_t rgb_encode(GB_gameboy_t *gb, uint8_t r, uint8_t g, uint8_t b) {
     return (r << 24) | (g << 16) | (b << 8) | 0xFF;
 }
 
-static void save_frame_rgb555(const char *output_dir, int frame_num) {
-    char path[1024];
-    snprintf(path, sizeof(path), "%s/frame_%04d.rgb555", output_dir, frame_num);
-    
-    FILE *f = fopen(path, "wb");
-    if (!f) {
-        fprintf(stderr, "Failed to open %s for writing\n", path);
-        return;
+static void output_frame_rgb555_to_stdout(int frame_num) {
+    // Output frame header to stderr for debugging, data to stdout
+    if (enable_debug) {
+        fprintf(stderr, "[FRAME] %d\n", frame_num);
     }
     
-    // Write raw RGB555 data
+    // Write raw RGB555 data to stdout
     for (int i = 0; i < 160 * 144; i++) {
         uint32_t pixel = pixel_buffer[i];
         uint8_t r8 = (pixel >> 24) & 0xFF;  // R
@@ -61,60 +57,27 @@ static void save_frame_rgb555(const char *output_dir, int frame_num) {
             rgb555 & 0xFF,         // Low byte
             (rgb555 >> 8) & 0xFF   // High byte
         };
-        fwrite(bytes, 1, 2, f);
+        fwrite(bytes, 1, 2, stdout);
     }
     
-    fclose(f);
+    fflush(stdout);
 }
 
-static void save_frame_ppm(const char *output_dir, int frame_num) {
-    char path[1024];
-    snprintf(path, sizeof(path), "%s/frame_%04d.ppm", output_dir, frame_num);
-    
-    FILE *f = fopen(path, "w");
-    if (!f) {
-        fprintf(stderr, "Failed to open %s for writing\n", path);
-        return;
-    }
-    
-    // PPM header
-    fprintf(f, "P3\n");
-    fprintf(f, "160 144\n");
-    fprintf(f, "255\n");
-    
-    // Write RGB data
-    for (int y = 0; y < 144; y++) {
-        for (int x = 0; x < 160; x++) {
-            uint32_t pixel = pixel_buffer[y * 160 + x];
-            uint8_t r = (pixel >> 24) & 0xFF;
-            uint8_t g = (pixel >> 16) & 0xFF;
-            uint8_t b = (pixel >> 8) & 0xFF;
-            fprintf(f, "%d %d %d ", r, g, b);
-        }
-        fprintf(f, "\n");
-    }
-    
-    fclose(f);
-}
 
 int main(int argc, char **argv) {
-    if (argc < 4 || argc > 5) {
-        fprintf(stderr, "Usage: %s <rom_file> <num_frames> <output_dir> [--debug]\n", argv[0]);
+    if (argc < 3 || argc > 4) {
+        fprintf(stderr, "Usage: %s <rom_file> <num_frames> [--debug]\n", argv[0]);
         return 1;
     }
     
     const char *rom_file = argv[1];
     target_frames = atoi(argv[2]);
-    const char *output_dir = argv[3];
     
     // Check for debug flag
-    if (argc == 5 && strcmp(argv[4], "--debug") == 0) {
+    if (argc == 4 && strcmp(argv[3], "--debug") == 0) {
         enable_debug = 1;
-        printf("Debug mode enabled\n");
+        fprintf(stderr, "Debug mode enabled\n");
     }
-    
-    // Create output directory
-    mkdir(output_dir, 0755);
     
     // Initialize GB
     GB_gameboy_t gb;
@@ -139,52 +102,45 @@ int main(int argc, char **argv) {
         return 1;
     }
     
-    // Run for specified number of frames
-    int saved_frames = 0;
-    
     if (enable_debug) {
-        printf("Running emulator for %d frames...\n", target_frames);
+        fprintf(stderr, "Running emulator for %d frames...\n", target_frames);
     }
     
-    // Run emulation and save frames
+    // Run emulation and output final frame
     for (int frame = 0; frame < target_frames; frame++) {
         // Run one complete frame
         GB_run_frame(&gb);
         
         // Debug: Print state info at the end if in debug mode
         if (enable_debug && frame == target_frames - 1) {
-            printf("[DEBUG] After frame %d:\n", frame + 1);
-            printf("  LCDC (0xFF40): 0x%02X\n", GB_read_memory(&gb, 0xFF40));
-            printf("  BGP (0xFF47): 0x%02X\n", GB_read_memory(&gb, 0xFF47));
-            printf("  SCY (0xFF42): 0x%02X\n", GB_read_memory(&gb, 0xFF42));
-            printf("  SCX (0xFF43): 0x%02X\n", GB_read_memory(&gb, 0xFF43));
-            printf("  LY (0xFF44): 0x%02X\n", GB_read_memory(&gb, 0xFF44));
+            fprintf(stderr, "[DEBUG] After frame %d:\n", frame + 1);
+            fprintf(stderr, "  LCDC (0xFF40): 0x%02X\n", GB_read_memory(&gb, 0xFF40));
+            fprintf(stderr, "  BGP (0xFF47): 0x%02X\n", GB_read_memory(&gb, 0xFF47));
+            fprintf(stderr, "  SCY (0xFF42): 0x%02X\n", GB_read_memory(&gb, 0xFF42));
+            fprintf(stderr, "  SCX (0xFF43): 0x%02X\n", GB_read_memory(&gb, 0xFF43));
+            fprintf(stderr, "  LY (0xFF44): 0x%02X\n", GB_read_memory(&gb, 0xFF44));
             
             // Check tile data at 0x8000
-            printf("  Tile 0 first bytes: 0x%02X 0x%02X\n", 
+            fprintf(stderr, "  Tile 0 first bytes: 0x%02X 0x%02X\n", 
                    GB_read_memory(&gb, 0x8000), GB_read_memory(&gb, 0x8001));
-            printf("  Tile 1 first bytes: 0x%02X 0x%02X\n", 
+            fprintf(stderr, "  Tile 1 first bytes: 0x%02X 0x%02X\n", 
                    GB_read_memory(&gb, 0x8010), GB_read_memory(&gb, 0x8011));
-            printf("  Tilemap[0-7]: %02X %02X %02X %02X %02X %02X %02X %02X\n",
+            fprintf(stderr, "  Tilemap[0-7]: %02X %02X %02X %02X %02X %02X %02X %02X\n",
                    GB_read_memory(&gb, 0x9800), GB_read_memory(&gb, 0x9801),
                    GB_read_memory(&gb, 0x9802), GB_read_memory(&gb, 0x9803),
                    GB_read_memory(&gb, 0x9804), GB_read_memory(&gb, 0x9805),
                    GB_read_memory(&gb, 0x9806), GB_read_memory(&gb, 0x9807));
         }
-        
-        // Save the current frame (only save first/last frames to speed up)
-        saved_frames++;
-        if (frame >= target_frames - 10 || frame < 2) {
-            if (enable_debug) {
-                printf("Saving frame %d...\n", saved_frames);
-            }
-            save_frame_rgb555(output_dir, saved_frames);
-            save_frame_ppm(output_dir, saved_frames);
-        }
     }
     
+    // Output the final frame data to stdout
+    output_frame_rgb555_to_stdout(target_frames);
+    
     GB_free(&gb);
-    printf("Generated %d frames in %s\n", saved_frames, output_dir);
+    
+    if (enable_debug) {
+        fprintf(stderr, "Completed %d frames\n", target_frames);
+    }
     
     return 0;
 }

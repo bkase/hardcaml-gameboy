@@ -11,21 +11,6 @@ let artifacts_dir = "../_artifacts"
 
 (* Working with RGB555 pixels directly as int values *)
 
-(* Read RGB555 file and extract first two lines *)
-let read_rgb555_lines ~path ~lines =
-  let ic = In_channel.create path in
-  let buf = Bytes.create (160 * 144 * 2) in (* 2 bytes per pixel for RGB555 *)
-  let _ = In_channel.input ic ~buf ~pos:0 ~len:(160 * 144 * 2) in
-  In_channel.close ic;
-  
-  let pixels = Array.init (160 * lines) ~f:(fun i ->
-    let offset = i * 2 in
-    let low_byte = Char.to_int (Bytes.get buf offset) in
-    let high_byte = Char.to_int (Bytes.get buf (offset + 1)) in
-    (* Reconstruct RGB555 from little-endian bytes *)
-    (high_byte lsl 8) lor low_byte
-  ) in
-  pixels
 
 (* Run HardCaml DUT simulation to generate framebuffer *)
 let run_hardcaml_dut ~rom:_ ~output_dir ~lines =
@@ -77,26 +62,45 @@ let run_hardcaml_dut ~rom:_ ~output_dir ~lines =
   pixels
 
 (* Run oracle (SameBoy) *)
-let run_oracle ~rom ~output_dir =
-  Core_unix.mkdir_p output_dir;
-  
+let run_oracle ~rom ~output_dir:_ =
   (* Use sameboy_headless tool from _build directory *)
   let sameboy_tool = "./sameboy_headless" in
   
   (* Run sameboy_headless - need 300 frames for flat_bg.gb to fully initialize with boot ROM *)
-  let cmd = Printf.sprintf "%s %s 300 %s" sameboy_tool rom output_dir in
+  let cmd = Printf.sprintf "%s %s 300" sameboy_tool rom in
   Printf.printf "Running oracle: %s\n" cmd;
-  let result = Core_unix.system cmd in
+  
+  (* Capture stdout from sameboy_headless, redirect stderr to /dev/null *)
+  let cmd_with_stderr = cmd ^ " 2>/dev/null" in
+  let ic = Caml_unix.open_process_in cmd_with_stderr in
+  let expected_bytes = 160 * 144 * 2 in
+  let buf = Bytes.create expected_bytes in
+  let rec read_all pos remaining =
+    if remaining = 0 then pos
+    else begin
+      let bytes_read = In_channel.input ic ~buf ~pos ~len:remaining in
+      if bytes_read = 0 then pos (* EOF reached *)
+      else read_all (pos + bytes_read) (remaining - bytes_read)
+    end
+  in
+  let total_bytes_read = read_all 0 expected_bytes in
+  let result = Caml_unix.close_process_in ic in
   
   match result with
-  | Ok () ->
-    (* Read the last generated frame (300th frame) *)
-    let rgb555_path = output_dir ^/ "frame_0300.rgb555" in
-    if Core.Result.is_ok (Core_unix.access rgb555_path [`Exists]) then
-      read_rgb555_lines ~path:rgb555_path ~lines:2
-    else
-      failwith "Oracle did not generate frame_0300.rgb555"
-  | Error _ -> failwith "Failed to run oracle"
+  | WEXITED 0 when total_bytes_read = (160 * 144 * 2) ->
+    (* Parse RGB555 data from stdout and extract first two lines *)
+    let pixels = Array.init (160 * 2) ~f:(fun i ->
+      let offset = i * 2 in
+      let low_byte = Char.to_int (Bytes.get buf offset) in
+      let high_byte = Char.to_int (Bytes.get buf (offset + 1)) in
+      (* Reconstruct RGB555 from little-endian bytes *)
+      (high_byte lsl 8) lor low_byte
+    ) in
+    pixels
+  | WEXITED 0 -> failwith (Printf.sprintf "Oracle produced %d bytes, expected %d" total_bytes_read (160 * 144 * 2))
+  | WEXITED code -> failwith (Printf.sprintf "Oracle failed with exit code %d" code)
+  | WSIGNALED signal -> failwith (Printf.sprintf "Oracle killed by signal %d" signal)
+  | WSTOPPED signal -> failwith (Printf.sprintf "Oracle stopped by signal %d" signal)
 
 (* Compare pixel streams *)
 let compare_pixels ~oracle ~dut =
