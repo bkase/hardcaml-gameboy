@@ -40,12 +40,12 @@ test: tools roms
 # Format all OCaml source files
 format:
 	@echo "Formatting OCaml source files..."
-	cx ocamlformat --inplace $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build")
+	ocamlformat --inplace $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build")
 
 # Check if files are properly formatted (non-zero exit if not formatted)
 check-format:
 	@echo "Checking OCaml code formatting..."
-	@if ! cx ocamlformat --check $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build"); then \
+	@if ! ocamlformat --check $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build"); then \
 		echo "Code is not properly formatted. Run 'make format' to fix."; \
 		exit 1; \
 	else \
