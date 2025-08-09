@@ -20,7 +20,8 @@ module O = struct
       busy : 'a (* High while filling framebuffer *)
     ; done_ : 'a (* 1-cycle pulse when fill completes *)
     ; (* Framebuffer Port A interface *)
-      fb_a_addr : 'a [@bits 15] (* Pixel address 0..23039 (word address = pixel address) *)
+      fb_a_addr : 'a
+          [@bits 15] (* Pixel address 0..23039 (word address = pixel address) *)
     ; fb_a_wdata : 'a [@bits 16] (* RGB555 pixel data *)
     ; fb_a_we : 'a (* Write enable *)
     }
@@ -67,9 +68,11 @@ let create _scope (i : _ I.t) =
 
   (* Fix: Separate reset from start - reset initializes via Reg_spec, start only triggers
      transitions *)
+  (* Fix: Gate start signal to prevent corruption from repeated start pulses during operation *)
+  let start_gated = i.start &: ~:running_reg in
   x <== mux2 running_reg next_x x_reg ;
   y <== mux2 running_reg next_y y_reg ;
-  running <== mux2 i.reset gnd (mux2 i.start vdd (mux2 at_last_pixel gnd running_reg)) ;
+  running <== mux2 i.reset gnd (mux2 start_gated vdd (mux2 at_last_pixel gnd running_reg)) ;
   done_pulse <== (running_reg &: at_last_pixel) ;
 
   { O.busy = running_reg
