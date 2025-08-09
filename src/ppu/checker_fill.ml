@@ -65,8 +65,10 @@ let create _scope (i : _ I.t) =
   let y_times_160 = sll (uresize y_reg 15) 7 +: sll (uresize y_reg 15) 5 in
   let addr_pix = y_times_160 +: uresize x_reg 15 in
 
-  x <== mux2 i.start (zero 8) (mux2 running_reg next_x x_reg) ;
-  y <== mux2 i.start (zero 8) (mux2 running_reg next_y y_reg) ;
+  (* Fix: Separate reset from start - reset initializes via Reg_spec, start only triggers
+     transitions *)
+  x <== mux2 running_reg next_x x_reg ;
+  y <== mux2 running_reg next_y y_reg ;
   running <== mux2 i.start vdd (mux2 at_last_pixel gnd running_reg) ;
   done_pulse <== (running_reg &: at_last_pixel) ;
 
