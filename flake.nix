@@ -39,8 +39,10 @@
           ];
           
           shellHook = ''
-            # Set macOS deployment target to avoid linker warnings
-            export MACOSX_DEPLOYMENT_TARGET=15.0
+            ${pkgs.lib.optionalString pkgs.stdenv.isDarwin ''
+              # Set macOS deployment target to avoid linker warnings on Darwin
+              export MACOSX_DEPLOYMENT_TARGET=11.0
+            ''}
             
             # Set up opam environment if it's initialized
             if [ -d "$HOME/.opam" ]; then
