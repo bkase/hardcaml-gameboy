@@ -8,7 +8,7 @@ BOOT_ROM_SRC = $(SAMEBOY_DIR)/BootROMs/dmg_boot.asm
 
 # Compiler settings
 CC = clang
-CFLAGS = -O2 -I$(SAMEBOY_BUILD)/include -Wall
+CFLAGS = -O2 -I$(SAMEBOY_BUILD)/include -Wall -Wextra -Werror -Wformat=2 -Wstrict-prototypes -Wno-unused-parameter
 LDFLAGS = -L$(SAMEBOY_BUILD)/lib -lsameboy -lm
 
 # Assembly tools

@@ -21,6 +21,7 @@
    ppu)
  (deps
   tools_and_roms_built)
+ (flags (:standard -w +26+8+11 -warn-error +26+8+11))
  (action
   (progn
    (run %{test}))))
