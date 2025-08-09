@@ -1,4 +1,4 @@
-.PHONY: all build run clean dev-shell test tools roms
+.PHONY: all build run clean dev-shell test tools roms vendor submodules
 
 # ===== Configuration =====
 # SameBoy paths
@@ -35,9 +35,22 @@ test: tools roms
 	@echo "Running oracle lockstep tests..."
 	dune test
 
+# ===== Vendor Targets =====
+
+# Initialize git submodules
+submodules:
+	@echo "Initializing git submodules..."
+	git submodule update --init --recursive
+
+# Build SameBoy library with fake gcc wrapper
+vendor: submodules
+	@echo "Building SameBoy library..."
+	@mkdir -p $(SAMEBOY_BUILD)
+	PATH="$(CURDIR)/tools:$(CURDIR)/vendor/cppp:$$PATH" $(MAKE) -C $(SAMEBOY_DIR) lib
+
 # ===== Tools Targets =====
 
-tools: out/sameboy_headless
+tools: vendor out/sameboy_headless
 
 # Build boot ROM from source
 out/dmg_boot.bin: $(BOOT_ROM_SRC)
@@ -52,7 +65,7 @@ out/boot_rom.h: out/dmg_boot.bin
 	@mkdir -p out
 	cd out && ../tools/bin2c.sh dmg_boot.bin boot_rom.h
 
-out/sameboy_headless: tools/sameboy_headless.c out/boot_rom.h
+out/sameboy_headless: vendor tools/sameboy_headless.c out/boot_rom.h
 	@echo "Building sameboy_headless..."
 	@mkdir -p out
 	$(CC) $(CFLAGS) -Iout -o $@ tools/sameboy_headless.c $(LDFLAGS)
@@ -76,6 +89,13 @@ clean:
 	dune clean
 	rm -f out/sameboy_headless out/boot_rom.h out/dmg_boot.bin out/dmg_boot.o
 	rm -f out/flat_bg.gb out/flat_bg.o
+
+# Clean vendor builds too
+clean-vendor:
+	@echo "Cleaning vendor artifacts..."
+	$(MAKE) -C $(SAMEBOY_DIR) clean
+
+clean-all: clean clean-vendor
 
 # Enter development shell (requires nix)
 dev-shell:
