@@ -69,7 +69,7 @@ let create _scope (i : _ I.t) =
      transitions *)
   x <== mux2 running_reg next_x x_reg ;
   y <== mux2 running_reg next_y y_reg ;
-  running <== mux2 i.start vdd (mux2 at_last_pixel gnd running_reg) ;
+  running <== mux2 i.reset gnd (mux2 i.start vdd (mux2 at_last_pixel gnd running_reg)) ;
   done_pulse <== (running_reg &: at_last_pixel) ;
 
   { O.busy = running_reg

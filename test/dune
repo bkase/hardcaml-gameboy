@@ -36,3 +36,16 @@
    stdio
    ppu))
 
+(test
+ (name test_checker_fill_reset_start)
+ (libraries 
+   alcotest
+   hardcaml
+   hardcaml_waveterm
+   core
+   base
+   stdio
+   ppu)
+ (flags (:standard -w +26+8+11 -warn-error +26+8+11)))
+
+
