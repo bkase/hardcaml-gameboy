@@ -7,7 +7,7 @@ module I : sig
     { clock : 'a
     ; reset : 'a (* Active-high asynchronous reset signal *)
     ; start : 'a (* Pulse to start checkerboard generation *)
-    ; b_addr : 'a [@bits 15] (* Read address for Port B *)
+    ; b_addr : 'a [@bits 15] (* Pixel read address 0..23039 (word address = pixel address) *)
     }
   [@@deriving hardcaml]
 end

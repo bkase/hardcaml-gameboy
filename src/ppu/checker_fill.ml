@@ -20,7 +20,7 @@ module O = struct
       busy : 'a (* High while filling framebuffer *)
     ; done_ : 'a (* 1-cycle pulse when fill completes *)
     ; (* Framebuffer Port A interface *)
-      fb_a_addr : 'a [@bits 15] (* Word address 0..23039 *)
+      fb_a_addr : 'a [@bits 15] (* Pixel address 0..23039 (word address = pixel address) *)
     ; fb_a_wdata : 'a [@bits 16] (* RGB555 pixel data *)
     ; fb_a_we : 'a (* Write enable *)
     }
@@ -61,7 +61,7 @@ let create _scope (i : _ I.t) =
   let black = of_int ~width:16 0x0000 in
   let pixel_color = mux2 color_sel white black in
 
-  (* Optimize address calculation: y * 160 = (y << 7) + (y << 5) *)
+  (* Optimize pixel address calculation: y * 160 = (y << 7) + (y << 5) *)
   let y_times_160 = sll (uresize y_reg 15) 7 +: sll (uresize y_reg 15) 5 in
   let addr_pix = y_times_160 +: uresize x_reg 15 in
 

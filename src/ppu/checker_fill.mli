@@ -17,7 +17,7 @@ module O : sig
       busy : 'a (* High while filling framebuffer *)
     ; done_ : 'a (* 1-cycle pulse when fill completes *)
     ; (* Framebuffer Port A interface *)
-      fb_a_addr : 'a [@bits 15] (* Word address 0..23039 *)
+      fb_a_addr : 'a [@bits 15] (* Pixel address 0..23039 (word address = pixel address) *)
     ; fb_a_wdata : 'a [@bits 16] (* RGB555 pixel data *)
     ; fb_a_we : 'a (* Write enable *)
     }
@@ -29,6 +29,8 @@ end
     - White (0x7FFF) for pattern=0, Black (0x0000) for pattern=1
     - 1 pixel per clock cycle throughput
     - Total 23,040 cycles to fill entire frame
+    - Addressing: Outputs pixel addresses 0-23039 (word address = pixel address)
+      where address = y * 160 + x for coordinate (x,y)
 
     Reset behavior: All internal registers are reset asynchronously when reset signal is
     high (active-high). This initializes the FSM to idle state, clearing x/y counters and
