@@ -44,10 +44,12 @@ static void output_frame_rgb555_to_stdout(int frame_num) {
         uint8_t g8 = (pixel >> 16) & 0xFF;  // G
         uint8_t b8 = (pixel >> 8) & 0xFF;   // B
         
-        // Convert 8-bit RGB to 5-bit RGB555 format
-        uint8_t r5 = (r8 * 31) / 255;
-        uint8_t g5 = (g8 * 31) / 255; 
-        uint8_t b5 = (b8 * 31) / 255;
+        // Convert 8-bit RGB to 5-bit RGB555 format using truncation
+        // Using truncation (>> 3) instead of scaling (* 31 / 255) to match DUT behavior
+        // and avoid potential off-by-one color mismatches
+        uint8_t r5 = r8 >> 3;  // Truncate from 8 bits to 5 bits (0-255 -> 0-31)
+        uint8_t g5 = g8 >> 3;  // Truncate from 8 bits to 5 bits (0-255 -> 0-31)
+        uint8_t b5 = b8 >> 3;  // Truncate from 8 bits to 5 bits (0-255 -> 0-31)
         
         // Pack into 16-bit RGB555: RRRRRGGGGGBBBBB
         uint16_t rgb555 = (r5 << 10) | (g5 << 5) | b5;
