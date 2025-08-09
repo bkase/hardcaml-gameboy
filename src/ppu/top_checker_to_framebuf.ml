@@ -3,7 +3,7 @@ module I = struct
     { clock : 'a
     ; reset : 'a
     ; start : 'a (* Pulse to start checkerboard generation *)
-    ; b_addr : 'a [@bits 15] (* Read address for Port B *)
+    ; b_addr : 'a [@bits Constants.pixel_addr_width] (* Read address for Port B *)
     }
   [@@deriving hardcaml]
 end
@@ -12,7 +12,8 @@ module O = struct
   type 'a t =
     { busy : 'a (* High while generating pattern *)
     ; done_ : 'a (* Pulse when generation complete *)
-    ; b_rdata : 'a [@bits 16] (* Read data from Port B (1-cycle latency) *)
+    ; b_rdata : 'a [@bits Constants.pixel_data_width]
+          (* Read data from Port B (1-cycle latency) *)
     }
   [@@deriving hardcaml]
 end

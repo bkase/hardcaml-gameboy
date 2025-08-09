@@ -34,6 +34,7 @@ This is a hardware implementation of a GameBoy emulator using HardCaml, an OCaml
 - Prefer combinational logic where possible
 - Use `Reg_spec` for sequential logic
 - Always include simulation test benches for modules
+- **NEVER use magic numbers** - all constants should be defined in appropriate Constants modules
 
 ### Testing Strategy
 - Unit tests for individual modules using `dune test`
@@ -108,3 +109,18 @@ dune clean
 - Keep register widths consistent with GameBoy specifications
 - Test edge cases, especially for memory boundaries
 - Consider power-of-2 optimizations for hardware efficiency
+- **NO MAGIC NUMBERS**: Use constants from appropriate Constants modules (e.g., `src/ppu/constants.ml` for display-related values)
+
+## Constants Organization
+
+### PPU Constants (`src/ppu/constants.ml`)
+- `screen_width` (160): GameBoy LCD width in pixels
+- `screen_height` (144): GameBoy LCD height in pixels  
+- `total_pixels` (23,040): Total pixels in GameBoy screen
+- `pixel_addr_width` (15): Address width for pixel addressing
+- `pixel_data_width` (16): RGB555 pixel data width
+- `coord_width` (8): Coordinate width for x,y values
+- `rgb555_white` (0x7FFF), `rgb555_black` (0x0000): Color constants
+- Other RGB555 and checkerboard pattern constants
+
+**Always import and use these constants instead of hardcoding numeric values!**

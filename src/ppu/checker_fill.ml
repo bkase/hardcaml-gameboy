@@ -2,11 +2,12 @@ open Base
 open Hardcaml
 open Signal
 
-let width = 160
+(* Import GameBoy display constants *)
+let width = Constants.screen_width
 
-let height = 144
+let height = Constants.screen_height
 
-let _total_pixels = width * height
+let _total_pixels = Constants.total_pixels
 
 module I = struct
   type 'a t =
@@ -21,8 +22,9 @@ module O = struct
     ; done_ : 'a (* 1-cycle pulse when fill completes *)
     ; (* Framebuffer Port A interface *)
       fb_a_addr : 'a
-          [@bits 15] (* Pixel address 0..23039 (word address = pixel address) *)
-    ; fb_a_wdata : 'a [@bits 16] (* RGB555 pixel data *)
+          [@bits Constants.pixel_addr_width]
+          (* Pixel address 0..23039 (word address = pixel address) *)
+    ; fb_a_wdata : 'a [@bits Constants.pixel_data_width] (* RGB555 pixel data *)
     ; fb_a_we : 'a (* Write enable *)
     }
   [@@deriving hardcaml]
@@ -31,8 +33,8 @@ end
 let create _scope (i : _ I.t) =
   let spec = Reg_spec.create ~clock:i.clock ~reset:i.reset () in
 
-  let x = wire 8 in
-  let y = wire 8 in
+  let x = wire Constants.coord_width in
+  let y = wire Constants.coord_width in
   let running = wire 1 in
   let done_pulse = wire 1 in
 
@@ -43,28 +45,37 @@ let create _scope (i : _ I.t) =
   let at_last_pixel = x_reg ==:. width - 1 &: (y_reg ==:. height - 1) in
   let at_end_of_line = x_reg ==:. width - 1 in
 
-  let next_x = mux2 at_end_of_line (zero 8) (x_reg +:. 1) in
+  let next_x = mux2 at_end_of_line (zero Constants.coord_width) (x_reg +:. 1) in
   let next_y =
-    mux2 at_end_of_line (mux2 (y_reg ==:. height - 1) (zero 8) (y_reg +:. 1)) y_reg
+    mux2 at_end_of_line
+      (mux2 (y_reg ==:. height - 1) (zero Constants.coord_width) (y_reg +:. 1))
+      y_reg
   in
 
   (* Fix: Use current coordinate values instead of registered values to match SameBoy
      timing *)
-  let current_x = mux2 running_reg next_x (zero 8) in
-  let current_y = mux2 running_reg next_y (zero 8) in
+  let current_x = mux2 running_reg next_x (zero Constants.coord_width) in
+  let current_y = mux2 running_reg next_y (zero Constants.coord_width) in
 
-  let blk_x = uresize (srl current_x 3) 5 in
-  let blk_y = uresize (srl current_y 3) 5 in
+  let blk_x =
+    uresize (srl current_x Constants.checker_shift_bits) Constants.rgb555_channel_width
+  in
+  let blk_y =
+    uresize (srl current_y Constants.checker_shift_bits) Constants.rgb555_channel_width
+  in
   let color_sel = lsb (blk_x ^: blk_y) in
 
-  let white = of_int ~width:16 0x7FFF in
+  let white = of_int ~width:Constants.pixel_data_width Constants.rgb555_white in
   (* RGB555: all bits set = white *)
-  let black = of_int ~width:16 0x0000 in
+  let black = of_int ~width:Constants.pixel_data_width Constants.rgb555_black in
   let pixel_color = mux2 color_sel white black in
 
-  (* Optimize pixel address calculation: y * 160 = (y << 7) + (y << 5) *)
-  let y_times_160 = sll (uresize y_reg 15) 7 +: sll (uresize y_reg 15) 5 in
-  let addr_pix = y_times_160 +: uresize x_reg 15 in
+  (* Optimize pixel address calculation: y * screen_width = (y << 7) + (y << 5) *)
+  let y_times_width =
+    sll (uresize y_reg Constants.pixel_addr_width) Constants.screen_width_shift_7
+    +: sll (uresize y_reg Constants.pixel_addr_width) Constants.screen_width_shift_5
+  in
+  let addr_pix = y_times_width +: uresize x_reg Constants.pixel_addr_width in
 
   (* Fix: Separate reset from start - reset initializes via Reg_spec, start only triggers
      transitions *)

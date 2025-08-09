@@ -1,23 +1,23 @@
 open Base
 open Hardcaml
 
-(* Framebuffer module for GameBoy LCD (160x144 pixels)
+(* Framebuffer module for GameBoy LCD (Constants.screen_width x Constants.screen_height pixels)
  *
  * Addressing scheme:
- * - Each pixel is stored as one 16-bit word (RGB555 format)
+ * - Each pixel is stored as one Constants.pixel_data_width-bit word (RGB555 format)
  * - Word address = pixel address (they are equivalent in this design)
- * - Pixel address range: 0 to 23,039 (160*144 - 1)
- * - Address 0 = first pixel (top-left), Address 23039 = last pixel (bottom-right)
- * - Address calculation: pixel_address = row * 160 + column
- * - 15-bit address width supports 0-32,767 but only 0-23,039 are valid
- * - Out-of-range addresses (23,040+) will cause undefined behavior
+ * - Pixel address range: 0 to Constants.total_pixels-1
+ * - Address 0 = first pixel (top-left), Address (Constants.total_pixels-1) = last pixel (bottom-right)
+ * - Address calculation: pixel_address = row * Constants.screen_width + column
+ * - Constants.pixel_addr_width-bit address width supports 0-32,767 but only 0-(Constants.total_pixels-1) are valid
+ * - Out-of-range addresses (Constants.total_pixels+) will cause undefined behavior
  * - Simulation-only validation signals detect invalid addresses
  *
- * The framebuffer stores RGB555 pixel data (16-bit per pixel):
+ * The framebuffer stores RGB555 pixel data (Constants.pixel_data_width-bit per pixel):
  * - Bit 15: Unused (always 0)
- * - Bits 14-10: Red channel (5 bits)
- * - Bits 9-5: Green channel (5 bits) 
- * - Bits 4-0: Blue channel (5 bits)
+ * - Bits 14-10: Red channel (Constants.rgb555_channel_width bits)
+ * - Bits 9-5: Green channel (Constants.rgb555_channel_width bits)
+ * - Bits 4-0: Blue channel (Constants.rgb555_channel_width bits)
  *)
 
 module I = struct
@@ -25,18 +25,22 @@ module I = struct
     { clock : 'a
     ; (* Port A - Write interface *)
       a_addr : 'a
-          [@bits 15] (* Pixel address 0..23039 (word address = pixel address) - MUST be within valid range *)
-    ; a_wdata : 'a [@bits 16] (* RGB555 pixel data *)
+          [@bits Constants.pixel_addr_width]
+          (* Pixel address 0..(Constants.total_pixels-1) (word address = pixel address) -
+             MUST be within valid range *)
+    ; a_wdata : 'a [@bits Constants.pixel_data_width] (* RGB555 pixel data *)
     ; a_we : 'a [@bits 1] (* Write enable *)
     ; (* Port B - Read interface *)
-      b_addr : 'a [@bits 15]
-          (* Pixel address 0..23039 (word address = pixel address) - MUST be within valid range *)
+      b_addr : 'a [@bits Constants.pixel_addr_width]
+          (* Pixel address 0..(Constants.total_pixels-1) (word address = pixel address) -
+             MUST be within valid range *)
     }
   [@@deriving hardcaml]
 end
 
 module O = struct
-  type 'a t = { b_rdata : 'a [@bits 16] (* Read data (1 cycle latency) *) }
+  type 'a t =
+    { b_rdata : 'a [@bits Constants.pixel_data_width] (* Read data (1 cycle latency) *) }
   [@@deriving hardcaml]
 end
 
@@ -45,10 +49,12 @@ let create scope (i : _ I.t) =
   (* Register specification for synchronous logic *)
   let spec = Reg_spec.create ~clock:i.clock () in
 
-  (* Framebuffer size: 160×144 = 23,040 pixels = 23,040 16-bit words (one word per pixel) *)
-  let framebuf_size = 23040 in
+  (* Framebuffer size: Constants.screen_width × Constants.screen_height =
+     Constants.total_pixels pixels = Constants.total_pixels Constants.pixel_data_width-bit
+     words (one word per pixel) *)
+  let framebuf_size = Constants.total_pixels in
 
-  (* Maximum valid pixel address is 23039 (160*144 - 1 = GameBoy screen size) *)
+  (* Maximum valid pixel address is (Constants.total_pixels-1) = GameBoy screen size *)
   let max_valid_addr = framebuf_size - 1 in
 
   (* Debug signals for pixel address validation - these will be visible in simulation
