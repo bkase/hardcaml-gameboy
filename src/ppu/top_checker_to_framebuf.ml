@@ -18,16 +18,16 @@ module O = struct
   [@@deriving hardcaml]
 end
 
-let create _scope (i : _ I.t) =
+let create scope (i : _ I.t) =
   (* Instantiate checker fill pattern generator *)
-  let checker_out = Checker_fill.create _scope {
+  let checker_out = Checker_fill.create scope {
     Checker_fill.I.clock = i.clock;
     reset = i.reset;
     start = i.start;
   } in
   
   (* Instantiate framebuffer *)
-  let framebuf_out = Framebuf.create _scope {
+  let framebuf_out = Framebuf.create scope {
     Framebuf.I.clock = i.clock;
     a_addr = checker_out.fb_a_addr;
     a_wdata = checker_out.fb_a_wdata;
