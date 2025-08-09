@@ -5,7 +5,7 @@ open Hardcaml
 module I : sig
   type 'a t =
     { clock : 'a
-    ; reset : 'a
+    ; reset : 'a (* Active-high asynchronous reset signal *)
     ; start : 'a (* Pulse to start checkerboard generation *)
     ; b_addr : 'a [@bits 15] (* Read address for Port B *)
     }
@@ -21,5 +21,9 @@ module O : sig
   [@@deriving hardcaml]
 end
 
-(** Create top-level module that wires Checker_fill to Framebuf *)
+(** Create top-level module that wires Checker_fill to Framebuf
+
+    Reset behavior: The reset signal (active-high) is passed through to the Checker_fill
+    module which uses it for asynchronous reset of internal registers. The framebuffer
+    (RAM) itself is not reset, but the pattern generator is reset to idle state. *)
 val create : Scope.t -> Signal.t I.t -> Signal.t O.t

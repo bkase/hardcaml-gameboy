@@ -4,7 +4,10 @@ open Hardcaml
 
 module I : sig
   type 'a t =
-    { clock : 'a; reset : 'a; start : 'a (* Pulse high for one cycle to begin filling *) }
+    { clock : 'a
+    ; reset : 'a (* Active-high asynchronous reset signal *)
+    ; start : 'a (* Pulse high for one cycle to begin filling *)
+    }
   [@@deriving hardcaml]
 end
 
@@ -25,5 +28,9 @@ end
     - Pattern: (x>>3 XOR y>>3) & 1 determines color
     - White (0x7FFF) for pattern=0, Black (0x0000) for pattern=1
     - 1 pixel per clock cycle throughput
-    - Total 23,040 cycles to fill entire frame *)
+    - Total 23,040 cycles to fill entire frame
+
+    Reset behavior: All internal registers are reset asynchronously when reset signal is
+    high (active-high). This initializes the FSM to idle state, clearing x/y counters and
+    running flag. *)
 val create : Scope.t -> Signal.t I.t -> Signal.t O.t
