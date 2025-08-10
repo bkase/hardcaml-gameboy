@@ -62,9 +62,7 @@ jobs:
             ${{ runner.os }}-hardcaml-gameboy-
 
       - name: First time setup
-        run: |
-          make setup
-          opam install ocamlformat --yes --confirm-level=unsafe-yes
+        run: make setup
         shell: nix develop --command bash -e {0}
 
       - name: Check format
