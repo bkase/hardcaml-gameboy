@@ -42,17 +42,6 @@ jobs:
           name: nix-community
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
-      - name: Install RGB tools (Ubuntu only)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y rgbds
-
-      - name: Install RGB tools (macOS only)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install rgbds
-
       - name: Cache build artifacts
         uses: actions/cache@v4
         with:
