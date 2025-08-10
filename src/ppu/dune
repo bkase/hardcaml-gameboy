@@ -1,0 +1,6 @@
+(library
+ (name ppu)
+ (public_name hardcaml-gameboy.ppu)
+ (libraries hardcaml core)
+ (preprocess (pps ppx_hardcaml))
+ (flags (:standard -w +26+8+11 -warn-error +26+8+11)))

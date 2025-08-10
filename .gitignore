@@ -76,3 +76,5 @@ vendor/SameBoy/build/
 # cppp build
 vendor/cppp/*.o
 vendor/cppp/cppp
+
+cleanup-todos.md

@@ -1,21 +1,51 @@
 (rule
  (targets tools_and_roms_built)
  (deps
-  (source_tree ../tools)
-  (source_tree ../roms)
-  (source_tree ../vendor))
+  ../tools/sameboy_headless.c
+  ../tools/bin2c.sh
+  ../vendor/SameBoy/BootROMs/dmg_boot.asm
+  ../roms/flat_bg.asm
+  (source_tree ../vendor/SameBoy))
  (action
   (progn
-   (run make -C .. tools roms)
+   (chdir %{workspace_root} (run make tools roms))
    (with-stdout-to %{targets} (echo "done")))))
 
 (test
  (name oracle_lockstep)
- (libraries core alcotest core_unix core_unix.sys_unix)
+ (libraries 
+   alcotest
+   hardcaml
+   hardcaml_waveterm
+   core
+   core_unix 
+   core_unix.sys_unix
+   ppu)
  (deps
-  tools_and_roms_built
-  ../roms/flat_bg.gb
-  ../tools/sameboy_headless)
+  tools_and_roms_built)
+ (flags (:standard -w +26+8+11 -warn-error +26+8+11))
  (action
   (progn
    (run %{test}))))
+
+(executable
+ (name test_framebuf_assertion)
+ (libraries 
+   hardcaml
+   base
+   stdio
+   ppu))
+
+(test
+ (name test_checker_fill_reset_start)
+ (libraries 
+   alcotest
+   hardcaml
+   hardcaml_waveterm
+   core
+   base
+   stdio
+   ppu)
+ (flags (:standard -w +26+8+11 -warn-error +26+8+11)))
+
+

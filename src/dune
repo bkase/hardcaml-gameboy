@@ -1,4 +1,0 @@
-(executable
- (public_name hardcaml-hello)
- (name main)
- (libraries base stdio core unix hardcaml))

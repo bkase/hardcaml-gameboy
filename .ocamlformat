@@ -1,0 +1,36 @@
+version = 0.27.0
+profile = default
+
+# Formatting style
+break-cases = fit-or-vertical
+break-fun-decl = wrap
+break-infix = wrap
+break-struct = force
+cases-exp-indent = 2
+doc-comments = before
+exp-grouping = preserve
+field-space = loose
+if-then-else = compact
+indent-after-in = 0
+let-and = compact
+let-binding-spacing = compact
+margin = 90
+module-item-spacing = sparse
+parens-tuple = multi-line-only
+sequence-style = separator
+single-case = compact
+type-decl = compact
+
+# HardCaml specific settings
+parse-docstrings = true
+wrap-comments = true
+
+# Jane Street style preferences
+break-separators = before
+space-around-arrays = true
+space-around-lists = true
+space-around-records = true
+space-around-variants = true
+
+# Disable some overly aggressive formatting
+dock-collection-brackets = false

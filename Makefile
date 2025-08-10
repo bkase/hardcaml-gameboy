@@ -1,4 +1,4 @@
-.PHONY: all build run clean dev-shell test tools roms
+.PHONY: all build run clean dev-shell test tools roms vendor submodules format check-format synth
 
 # ===== Configuration =====
 # SameBoy paths
@@ -8,12 +8,16 @@ BOOT_ROM_SRC = $(SAMEBOY_DIR)/BootROMs/dmg_boot.asm
 
 # Compiler settings
 CC = clang
-CFLAGS = -O2 -I$(SAMEBOY_BUILD)/include -Wall
+CFLAGS = -O2 -I$(SAMEBOY_BUILD)/include -Wall -Wextra -Werror -Wformat=2 -Wstrict-prototypes -Wno-unused-parameter
 LDFLAGS = -L$(SAMEBOY_BUILD)/lib -lsameboy -lm
 
 # Assembly tools
 RGBASM = rgbasm
 RGBLINK = rgblink
+
+# Synthesis settings
+SYNTH_DIR = synth
+CONSTRAINTS_DIR = constraints
 
 # ===== Main Targets =====
 
@@ -25,42 +29,83 @@ build:
 	@echo "Building HardCaml project..."
 	dune build
 
-# Run the example
-run: build
-	@echo "Running HardCaml hello world with SMT checking..."
-	dune exec ./src/main.exe
 
 # Run tests
 test: tools roms
 	@echo "Running oracle lockstep tests..."
 	dune test
 
+# ===== Synthesis Targets =====
+
+# Generate Verilog from HardCaml modules
+synth: build
+	@echo "Generating Verilog from HardCaml modules..."
+	@mkdir -p $(SYNTH_DIR)
+	dune exec ./synth_tool/synthesize.exe
+	@echo "Verilog files generated in $(SYNTH_DIR)/"
+
+# ===== Formatting Targets =====
+
+# Format all OCaml source files
+format:
+	@echo "Formatting OCaml source files..."
+	ocamlformat --inplace $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build")
+
+# Check if files are properly formatted (non-zero exit if not formatted)
+check-format:
+	@echo "Checking OCaml code formatting..."
+	@if ! ocamlformat --check $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build"); then \
+		echo "Code is not properly formatted. Run 'make format' to fix."; \
+		exit 1; \
+	else \
+		echo "All OCaml files are properly formatted."; \
+	fi
+
+# ===== Vendor Targets =====
+
+# Initialize git submodules
+submodules:
+	@echo "Initializing git submodules..."
+	git submodule update --init --recursive
+
+# Build SameBoy library with fake gcc wrapper
+vendor: submodules
+	@echo "Building SameBoy library..."
+	@mkdir -p $(SAMEBOY_BUILD)
+	PATH="$(CURDIR)/tools:$(CURDIR)/vendor/cppp:$$PATH" $(MAKE) -C $(SAMEBOY_DIR) lib
+
 # ===== Tools Targets =====
 
-tools: tools/sameboy_headless
+tools: vendor out/sameboy_headless
 
 # Build boot ROM from source
-tools/dmg_boot.bin: $(BOOT_ROM_SRC)
+out/dmg_boot.bin: $(BOOT_ROM_SRC)
 	@echo "Building boot ROM from source..."
-	$(RGBASM) -I$(SAMEBOY_DIR)/BootROMs -o tools/dmg_boot.o $(BOOT_ROM_SRC)
-	$(RGBLINK) -x -o $@ tools/dmg_boot.o
-	@rm -f tools/dmg_boot.o
+	@mkdir -p out
+	$(RGBASM) -I$(SAMEBOY_DIR)/BootROMs -o out/dmg_boot.o $(BOOT_ROM_SRC)
+	$(RGBLINK) -x -o $@ out/dmg_boot.o
+	@rm -f out/dmg_boot.o
 
-tools/boot_rom.h: tools/dmg_boot.bin
+out/boot_rom.h: out/dmg_boot.bin
 	@echo "Generating boot ROM header..."
-	cd tools && ./bin2c.sh dmg_boot.bin boot_rom.h
+	@mkdir -p out
+	cd out && ../tools/bin2c.sh dmg_boot.bin boot_rom.h
 
-tools/sameboy_headless: tools/sameboy_headless.c tools/boot_rom.h
+out/sameboy_headless: vendor tools/sameboy_headless.c out/boot_rom.h
 	@echo "Building sameboy_headless..."
-	$(CC) $(CFLAGS) -o $@ tools/sameboy_headless.c $(LDFLAGS)
+	@mkdir -p out
+	$(CC) $(CFLAGS) -Iout -o $@ tools/sameboy_headless.c $(LDFLAGS)
 
 # ===== ROMs Targets =====
 
-roms: roms/flat_bg.gb
+roms: out/flat_bg.gb
 
-roms/flat_bg.gb: roms/flat_bg.asm
+out/flat_bg.gb: roms/flat_bg.asm
 	@echo "Building test ROMs..."
-	$(MAKE) -C roms
+	@mkdir -p out
+	$(RGBASM) -o out/flat_bg.o roms/flat_bg.asm
+	$(RGBLINK) -o out/flat_bg.gb out/flat_bg.o
+	rgbfix -p 0xFF -v out/flat_bg.gb
 
 # ===== Clean Target =====
 
@@ -68,31 +113,47 @@ roms/flat_bg.gb: roms/flat_bg.asm
 clean:
 	@echo "Cleaning build artifacts..."
 	dune clean
-	rm -f tools/sameboy_headless tools/boot_rom.h tools/dmg_boot.bin tools/dmg_boot.o
-	rm -f roms/*.gb roms/*.o
+	rm -f out/sameboy_headless out/boot_rom.h out/dmg_boot.bin out/dmg_boot.o
+	rm -f out/flat_bg.gb out/flat_bg.o
+	rm -rf $(SYNTH_DIR)
+
+# Clean vendor builds too
+clean-vendor:
+	@echo "Cleaning vendor artifacts..."
+	$(MAKE) -C $(SAMEBOY_DIR) clean
+
+clean-all: clean clean-vendor
 
 # Enter development shell (requires nix)
 dev-shell:
 	@echo "Entering Nix development shell..."
 	nix develop
 
-# Build and run in one step
-demo: build run
 
 # Show project structure
 info:
-	@echo "HardCaml Project Structure:"
-	@echo "=========================="
+	@echo "HardCaml GameBoy Project Structure:"
+	@echo "==================================="
 	@echo "flake.nix          - Nix flake with OCaml 5 + HardCaml + Z3"
 	@echo "dune-project       - Dune project configuration"
-	@echo "src/main.ml        - HardCaml counter example with SMT verification"
-	@echo "src/dune           - Dune build file"
-	@echo "Makefile           - This makefile"
+	@echo "src/ppu/           - PPU implementation modules"
+	@echo "synth_tool/        - Verilog synthesis tool"
+	@echo "constraints/       - FPGA timing constraints"
+	@echo "test/              - Oracle lockstep testing"
+	@echo "tools/             - SameBoy integration tools"
+	@echo "roms/              - Test ROM sources"
 	@echo ""
-	@echo "Commands:"
-	@echo "  make dev-shell   - Enter Nix development environment"
-	@echo "  make build       - Build the project"
-	@echo "  make run         - Run the example"
-	@echo "  make demo        - Build and run"
-	@echo "  make clean       - Clean build artifacts"
-	@echo "  make info        - Show this information"
+	@echo "Main Commands:"
+	@echo "  make dev-shell     - Enter Nix development environment"
+	@echo "  make build         - Build the OCaml project"
+	@echo "  make synth         - Generate synthesizable Verilog"
+	@echo "  make test          - Run oracle lockstep tests against SameBoy"
+	@echo "  make format        - Format all OCaml source files"
+	@echo "  make check-format  - Check if files are properly formatted"
+	@echo "  make clean         - Clean build artifacts"
+	@echo "  make info          - Show this information"
+	@echo ""
+	@echo "Synthesis Output:"
+	@echo "  synth/checker_fill.v           - Checkerboard pattern generator"
+	@echo "  synth/framebuf.v              - Dual-port framebuffer memory"
+	@echo "  synth/top_checker_to_framebuf.v - Top-level PPU module"
