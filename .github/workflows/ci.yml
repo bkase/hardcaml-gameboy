@@ -53,22 +53,45 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-hardcaml-gameboy-
 
+      - name: First time setup
+        run: |
+          nix develop --command bash -c "
+            opam init --disable-sandboxing --yes
+            eval \$(opam env)
+            opam install . --deps-only --yes
+          "
+
       - name: Check format
         run: |
-          nix develop --command make check-format
+          nix develop --command bash -c "
+            eval \$(opam env)
+            make check-format
+          "
 
       - name: Build project
         run: |
-          nix develop --command make build
+          nix develop --command bash -c "
+            eval \$(opam env)
+            make build
+          "
 
       - name: Build tools and ROMs
         run: |
-          nix develop --command make tools roms
+          nix develop --command bash -c "
+            eval \$(opam env)
+            make tools roms
+          "
 
       - name: Run tests
         run: |
-          nix develop --command make test
+          nix develop --command bash -c "
+            eval \$(opam env)
+            make test
+          "
 
       - name: Generate Verilog
         run: |
-          nix develop --command make synth
+          nix develop --command bash -c "
+            eval \$(opam env)
+            make synth
+          "
