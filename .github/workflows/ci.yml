@@ -63,35 +63,20 @@ jobs:
 
       - name: Check format
         run: |
-          nix develop --command bash -c "
-            eval \$(opam env)
-            make check-format
-          "
+          nix develop --command make check-format
 
       - name: Build project
         run: |
-          nix develop --command bash -c "
-            eval \$(opam env)
-            make build
-          "
+          nix develop --command make build
 
       - name: Build tools and ROMs
         run: |
-          nix develop --command bash -c "
-            eval \$(opam env)
-            make tools roms
-          "
+          nix develop --command make tools roms
 
       - name: Run tests
         run: |
-          nix develop --command bash -c "
-            eval \$(opam env)
-            make test
-          "
+          nix develop --command make test
 
       - name: Generate Verilog
         run: |
-          nix develop --command bash -c "
-            eval \$(opam env)
-            make synth
-          "
+          nix develop --command make synth
