@@ -55,28 +55,27 @@ jobs:
 
       - name: First time setup
         run: |
-          nix develop --command bash -c "
-            opam init --disable-sandboxing --yes
-            eval \$(opam env)
-            opam install . --deps-only --yes
-          "
+          opam init --disable-sandboxing --yes
+          eval $(opam env)
+          opam install . --deps-only --yes
+        shell: nix develop --command bash -e {0}
 
       - name: Check format
-        run: |
-          nix develop --command make check-format
+        run: make check-format
+        shell: nix develop --command bash -e {0}
 
       - name: Build project
-        run: |
-          nix develop --command make build
+        run: make build
+        shell: nix develop --command bash -e {0}
 
       - name: Build tools and ROMs
-        run: |
-          nix develop --command make tools roms
+        run: make tools roms
+        shell: nix develop --command bash -e {0}
 
       - name: Run tests
-        run: |
-          nix develop --command make test
+        run: make test
+        shell: nix develop --command bash -e {0}
 
       - name: Generate Verilog
-        run: |
-          nix develop --command make synth
+        run: make synth
+        shell: nix develop --command bash -e {0}
