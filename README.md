@@ -174,7 +174,6 @@ The generated Verilog is vendor-neutral and should work with most FPGA synthesis
 
 ```
 src/
-├── main.ml                    # Main entry point
 └── ppu/                       # Picture Processing Unit
     ├── checker_fill.ml        # Checkerboard pattern generator
     ├── framebuf.ml           # Framebuffer interface

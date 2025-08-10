@@ -68,7 +68,45 @@ let create scope (i : _ I.t) =
   let _invalid_write_debug = invalid_write -- "invalid_framebuf_write_addr" in
   let _read_addr_too_large_debug = read_addr_too_large -- "invalid_framebuf_read_addr" in
 
-  (* Create dual-port RAM using HardCaml's Ram.create *)
+  (* Create dual-port RAM using HardCaml's Ram.create
+   *
+   * BRAM Collision Mode: Read_before_write
+   * =====================================
+   * 
+   * We use Read_before_write collision mode to model proper BRAM behavior when the same
+   * address is accessed simultaneously by both read and write ports. This choice ensures:
+   *
+   * 1. TIMING BEHAVIOR: When reading and writing the same address in the same clock cycle,
+   *    the read port returns the OLD value (before the write), while the write operation
+   *    stores the NEW value. This is the expected behavior for most FPGA BRAM primitives
+   *    and matches the typical use case for framebuffers.
+   *
+   * 2. SYNTHESIS IMPLICATIONS: This mode maps efficiently to FPGA Block RAM (BRAM)
+   *    primitives on most FPGA families (Xilinx, Intel, Lattice, etc.). FPGA BRAMs
+   *    naturally exhibit this behavior, so synthesis tools can directly infer BRAM
+   *    without additional logic.
+   *
+   * 3. FUNCTIONAL CORRECTNESS: For a framebuffer, we typically want to:
+   *    - Write pixel data to an address (e.g., from PPU rendering)
+   *    - Read pixel data from an address (e.g., for display output)
+   *    - If we read and write the same pixel in the same cycle, reading the old value
+   *      is the expected behavior - we get the current pixel state before it's updated
+   *
+   * 4. ALTERNATIVE MODES:
+   *    - Write_before_read: Would return the newly written value on same-cycle read/write.
+   *      This requires additional logic in FPGA synthesis and doesn't match typical BRAM
+   *      behavior. Not suitable for framebuffer use case.
+   *    - No_change: Would keep the read output unchanged during simultaneous operations.
+   *      This doesn't provide useful behavior for our framebuffer application.
+   *
+   * 5. HARDWARE MAPPING: This configuration allows the framebuffer to be implemented as:
+   *    - True dual-port BRAM on FPGAs with sufficient BRAM resources
+   *    - Distributed RAM if targeting smaller designs
+   *    - Standard memory interfaces in ASIC implementations
+   *
+   * The 1-cycle read latency (registered output) is inherent to BRAM primitives and
+   * matches our timing requirements for the GameBoy PPU pipeline.
+   *)
   let ram_output =
     Ram.create ~name:"framebuffer_ram" ~collision_mode:Read_before_write
       ~size:framebuf_size

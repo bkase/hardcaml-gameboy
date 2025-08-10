@@ -29,10 +29,6 @@ build:
 	@echo "Building HardCaml project..."
 	dune build
 
-# Run the example
-run: build
-	@echo "Running HardCaml hello world with SMT checking..."
-	dune exec ./src/main.exe
 
 # Run tests
 test: tools roms
@@ -133,8 +129,6 @@ dev-shell:
 	@echo "Entering Nix development shell..."
 	nix develop
 
-# Build and run in one step
-demo: build run
 
 # Show project structure
 info:

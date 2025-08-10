@@ -238,7 +238,12 @@ let test_lockstep () =
     Alcotest.fail (Printf.sprintf "%d pixels don't match" (List.length mismatches))
   end
 
-(* Alcotest setup *)
+(* Alcotest setup Note: Progress output is controlled by Alcotest's verbosity settings: -
+   Default: Only shows test results (quiet) - Verbose mode: Shows all Printf.printf output
+   during test execution
+
+   Usage: - dune test (quiet mode) - ALCOTEST_VERBOSE=1 dune runtest (verbose via env var)
+   - ./oracle_lockstep.exe --verbose (verbose via direct execution) *)
 let () =
   let open Alcotest in
   run "Oracle Lockstep Tests"
