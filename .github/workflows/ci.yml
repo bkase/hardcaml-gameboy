@@ -39,7 +39,7 @@ jobs:
       - name: Setup Nix cache
         uses: cachix/cachix-action@v14
         with:
-          name: bkase
+          name: bkase1
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: Cache opam directory
@@ -62,7 +62,9 @@ jobs:
             ${{ runner.os }}-hardcaml-gameboy-
 
       - name: First time setup
-        run: make setup
+        run: |
+          make setup
+          opam install ocamlformat --yes --confirm-level=unsafe-yes
         shell: nix develop --command bash -e {0}
 
       - name: Check format
