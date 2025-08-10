@@ -64,9 +64,7 @@
             if [ ! -d "$HOME/.opam" ]; then
               echo ""
               echo "First time setup:"
-              echo "  opam init --disable-sandboxing"
-              echo "  eval \$(opam env)"
-              echo "  opam install . --deps-only --yes"
+              echo "  make setup"
             else
               echo ""
               echo "Opam environment loaded automatically"

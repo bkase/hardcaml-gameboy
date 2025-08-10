@@ -54,10 +54,7 @@ jobs:
             ${{ runner.os }}-hardcaml-gameboy-
 
       - name: First time setup
-        run: |
-          opam init --disable-sandboxing --yes
-          eval $(opam env)
-          opam install . --deps-only --yes
+        run: make setup
         shell: nix develop --command bash -e {0}
 
       - name: Check format

@@ -1,4 +1,4 @@
-.PHONY: all build run clean dev-shell test tools roms vendor submodules format check-format synth
+.PHONY: all build run clean dev-shell test tools roms vendor submodules format check-format synth setup
 
 # ===== Configuration =====
 # SameBoy paths
@@ -23,6 +23,13 @@ CONSTRAINTS_DIR = constraints
 
 # Default target
 all: build tools roms
+
+# First time setup
+setup:
+	@echo "Setting up OCaml environment..."
+	opam init --disable-sandboxing --yes
+	eval $$(opam env)
+	opam install . --deps-only --yes
 
 # Build the OCaml project
 build:
