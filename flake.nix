@@ -17,39 +17,39 @@
           # ppx_hardcaml
           ppx_hardcaml = oself.buildDunePackage rec {
             pname = "ppx_hardcaml";
-            version = "0.14.2";
+            version = "unstable-2024-08-11";
             src = pkgs.fetchFromGitHub {
               owner = "janestreet";
               repo = "ppx_hardcaml";
-              rev = "v${version}";
+              rev = "main";
               sha256 = pkgs.lib.fakeHash;
             };
-            buildInputs = with oself; [ ppx_jane ppx_deriving ];
-            propagatedBuildInputs = with oself; [ base ppx_jane ppx_deriving ];
+            buildInputs = with oself; [ ppx_jane ppx_deriving hardcaml ];
+            propagatedBuildInputs = with oself; [ base ppx_jane ppx_deriving hardcaml ];
           };
           
           # hardcaml
           hardcaml = oself.buildDunePackage rec {
             pname = "hardcaml";
-            version = "0.14.2";
+            version = "unstable-2024-08-11";
             src = pkgs.fetchFromGitHub {
               owner = "janestreet";
               repo = "hardcaml";
-              rev = "v${version}";
-              sha256 = "sha256-MGzjmEnMkWqiQ+Ljz9IrAAUpD4P/eXjJHYByWd8M7WI=";
+              rev = "main";
+              sha256 = pkgs.lib.fakeHash;
             };
-            buildInputs = with oself; [ ppx_jane bin_prot zarith ];
-            propagatedBuildInputs = with oself; [ base stdio ppx_jane bin_prot zarith ];
+            buildInputs = with oself; [ ppx_jane bin_prot zarith topological_sort ];
+            propagatedBuildInputs = with oself; [ base stdio ppx_jane bin_prot zarith topological_sort ];
           };
           
           # hardcaml_waveterm
           hardcaml_waveterm = oself.buildDunePackage rec {
             pname = "hardcaml_waveterm";
-            version = "0.14.2";
+            version = "unstable-2024-08-11";
             src = pkgs.fetchFromGitHub {
               owner = "janestreet";
               repo = "hardcaml_waveterm";
-              rev = "v${version}";
+              rev = "main";
               sha256 = pkgs.lib.fakeHash;
             };
             buildInputs = with oself; [ hardcaml ];
