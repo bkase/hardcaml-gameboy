@@ -14,6 +14,7 @@
       {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
+            ocaml
             opam
             
             # SMT solver (available as system package)

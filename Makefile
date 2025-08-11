@@ -27,12 +27,14 @@ all: build tools roms
 # First time setup
 setup:
 	@echo "Setting up OCaml environment..."
-	@if [ ! -d "$$HOME/.opam" ]; then \
-		opam init --disable-sandboxing --shell-setup --yes; \
-	fi
-	eval $$(opam env)
-	opam install . --deps-only --with-test --yes --confirm-level=unsafe-yes
-	opam install ocamlformat --yes --confirm-level=unsafe-yes
+	@if [ -z "$$OPAMROOT" ]; then OPAMROOT="$$HOME/.opam"; fi; \
+	if [ ! -d "$$OPAMROOT" ]; then \
+		opam init --root "$$OPAMROOT" --disable-sandboxing --shell-setup --yes; \
+	fi; \
+	eval $$(opam env --root="$$OPAMROOT" --shell=bash); \
+	opam switch show --root="$$OPAMROOT" || opam switch create . ocaml-system --yes --root="$$OPAMROOT"; \
+	opam install . --deps-only --with-test --yes --confirm-level=unsafe-yes --root="$$OPAMROOT"; \
+	opam install ocamlformat --yes --confirm-level=unsafe-yes --root="$$OPAMROOT"
 
 # Build the OCaml project
 build:
