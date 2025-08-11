@@ -71,21 +71,31 @@ jobs:
             ${{ runner.os }}-hardcaml-gameboy-
 
       - name: Check format
+        env:
+          OPAMROOT: ${{ runner.temp }}/opam
         run: make check-format
         shell: nix develop --command bash -e {0}
 
       - name: Build project
+        env:
+          OPAMROOT: ${{ runner.temp }}/opam
         run: make build
         shell: nix develop --command bash -e {0}
 
       - name: Build tools and ROMs
+        env:
+          OPAMROOT: ${{ runner.temp }}/opam
         run: make tools roms
         shell: nix develop --command bash -e {0}
 
       - name: Run tests
+        env:
+          OPAMROOT: ${{ runner.temp }}/opam
         run: make test
         shell: nix develop --command bash -e {0}
 
       - name: Generate Verilog
+        env:
+          OPAMROOT: ${{ runner.temp }}/opam
         run: make synth
         shell: nix develop --command bash -e {0}

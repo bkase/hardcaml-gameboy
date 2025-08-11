@@ -61,12 +61,16 @@ synth: build
 # Format all OCaml source files
 format:
 	@echo "Formatting OCaml source files..."
+	@if [ -z "$$OPAMROOT" ]; then OPAMROOT="$$HOME/.opam"; fi; \
+	eval $$(opam env --root="$$OPAMROOT" --shell=bash); \
 	ocamlformat --inplace $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build")
 
 # Check if files are properly formatted (non-zero exit if not formatted)
 check-format:
 	@echo "Checking OCaml code formatting..."
-	@if ! ocamlformat --check $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build"); then \
+	@if [ -z "$$OPAMROOT" ]; then OPAMROOT="$$HOME/.opam"; fi; \
+	eval $$(opam env --root="$$OPAMROOT" --shell=bash); \
+	if ! ocamlformat --check $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build"); then \
 		echo "Code is not properly formatted. Run 'make format' to fix."; \
 		exit 1; \
 	else \
