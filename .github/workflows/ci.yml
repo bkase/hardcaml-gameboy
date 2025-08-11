@@ -52,7 +52,6 @@ jobs:
             ${{ runner.os }}-opam-
 
       - name: First time setup
-        if: steps.opam-cache.outputs.cache-hit != 'true'
         run: make setup
         shell: nix develop --command bash -e {0}
 

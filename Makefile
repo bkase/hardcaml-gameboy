@@ -27,7 +27,9 @@ all: build tools roms
 # First time setup
 setup:
 	@echo "Setting up OCaml environment..."
-	opam init --disable-sandboxing --shell-setup --yes
+	@if [ ! -d "$$HOME/.opam" ]; then \
+		opam init --disable-sandboxing --shell-setup --yes; \
+	fi
 	eval $$(opam env)
 	opam install . --deps-only --with-test --yes --confirm-level=unsafe-yes
 	opam install ocamlformat --yes --confirm-level=unsafe-yes
