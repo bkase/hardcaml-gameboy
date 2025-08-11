@@ -1,4 +1,4 @@
-.PHONY: all build run clean dev-shell test tools roms vendor submodules format check-format synth setup
+.PHONY: all build run clean dev-shell test tools roms vendor submodules format check-format synth
 
 # ===== Configuration =====
 # SameBoy paths
@@ -23,15 +23,6 @@ CONSTRAINTS_DIR = constraints
 
 # Default target
 all: build tools roms
-
-# Setup OCaml dependencies via opam (Nix provides system tools)
-setup:
-	@echo "Setting up OCaml dependencies via opam..."
-	@if [ ! -d "$$HOME/.opam" ]; then \
-		opam init --disable-sandboxing --shell-setup --yes; \
-	fi
-	eval $$(opam env)
-	opam install . --deps-only --with-test --yes --confirm-level=unsafe-yes
 
 # Build the OCaml project
 build:

@@ -10,18 +10,75 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        
+        # Custom OCaml packages
+        customOcamlPackages = pkgs.ocamlPackages.overrideScope (oself: osuper: {
+          
+          # ppx_hardcaml
+          ppx_hardcaml = oself.buildDunePackage rec {
+            pname = "ppx_hardcaml";
+            version = "0.14.2";
+            src = pkgs.fetchFromGitHub {
+              owner = "janestreet";
+              repo = "ppx_hardcaml";
+              rev = "v${version}";
+              sha256 = pkgs.lib.fakeHash;
+            };
+            buildInputs = with oself; [ ppx_jane ppx_deriving ];
+            propagatedBuildInputs = with oself; [ base ppx_jane ppx_deriving ];
+          };
+          
+          # hardcaml
+          hardcaml = oself.buildDunePackage rec {
+            pname = "hardcaml";
+            version = "0.14.2";
+            src = pkgs.fetchFromGitHub {
+              owner = "janestreet";
+              repo = "hardcaml";
+              rev = "v${version}";
+              sha256 = "sha256-MGzjmEnMkWqiQ+Ljz9IrAAUpD4P/eXjJHYByWd8M7WI=";
+            };
+            buildInputs = with oself; [ ppx_jane bin_prot zarith ];
+            propagatedBuildInputs = with oself; [ base stdio ppx_jane bin_prot zarith ];
+          };
+          
+          # hardcaml_waveterm
+          hardcaml_waveterm = oself.buildDunePackage rec {
+            pname = "hardcaml_waveterm";
+            version = "0.14.2";
+            src = pkgs.fetchFromGitHub {
+              owner = "janestreet";
+              repo = "hardcaml_waveterm";
+              rev = "v${version}";
+              sha256 = pkgs.lib.fakeHash;
+            };
+            buildInputs = with oself; [ hardcaml ];
+            propagatedBuildInputs = with oself; [ hardcaml base stdio ];
+          };
+          
+        });
       in
       {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             ocaml
-            opam
             dune_3
             
-            # OCaml packages available in nixpkgs
+            # Custom OCaml packages
+            customOcamlPackages.hardcaml
+            customOcamlPackages.hardcaml_waveterm
+            customOcamlPackages.ppx_hardcaml
+            
+            # OCaml packages from nixpkgs
+            ocamlPackages.base
+            ocamlPackages.stdio
+            ocamlPackages.core
+            ocamlPackages.alcotest
+            ocamlPackages.ppx_deriving
+            ocamlPackages.ppx_jane
             ocamlPackages.ocamlformat
             
-            # SMT solver (available as system package)
+            # SMT solver
             z3
             
             # Build tools
@@ -37,10 +94,6 @@
             
             # Additional tools
             git
-            m4
-            gmp
-            openssl
-            libffi
           ];
           
           shellHook = ''
