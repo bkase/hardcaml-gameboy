@@ -23,8 +23,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
-    env:
-      OPAMYES: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -44,18 +42,7 @@ jobs:
           name: bkase1
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
-      - name: Cache opam directory
-        id: opam-cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ runner.temp }}/opam
-          key: ${{ runner.os }}-opam-${{ hashFiles('hardcaml-gameboy.opam') }}
-          restore-keys: |
-            ${{ runner.os }}-opam-
-
-      - name: First time setup
-        env:
-          OPAMROOT: ${{ runner.temp }}/opam
+      - name: Setup OCaml dependencies
         run: make setup
         shell: nix develop --command bash -e {0}
 
@@ -71,31 +58,21 @@ jobs:
             ${{ runner.os }}-hardcaml-gameboy-
 
       - name: Check format
-        env:
-          OPAMROOT: ${{ runner.temp }}/opam
         run: make check-format
         shell: nix develop --command bash -e {0}
 
       - name: Build project
-        env:
-          OPAMROOT: ${{ runner.temp }}/opam
         run: make build
         shell: nix develop --command bash -e {0}
 
       - name: Build tools and ROMs
-        env:
-          OPAMROOT: ${{ runner.temp }}/opam
         run: make tools roms
         shell: nix develop --command bash -e {0}
 
       - name: Run tests
-        env:
-          OPAMROOT: ${{ runner.temp }}/opam
         run: make test
         shell: nix develop --command bash -e {0}
 
       - name: Generate Verilog
-        env:
-          OPAMROOT: ${{ runner.temp }}/opam
         run: make synth
         shell: nix develop --command bash -e {0}

@@ -16,6 +16,10 @@
           buildInputs = with pkgs; [
             ocaml
             opam
+            dune_3
+            
+            # OCaml packages available in nixpkgs
+            ocamlPackages.ocamlformat
             
             # SMT solver (available as system package)
             z3
@@ -31,7 +35,7 @@
             # Image processing for test diffs
             imagemagick
             
-            # Additional tools for opam
+            # Additional tools
             git
             m4
             gmp
@@ -45,32 +49,12 @@
               export MACOSX_DEPLOYMENT_TARGET=12.0
             ''}
             
-            # Set up opam environment if it's initialized
-            if [ -d "$HOME/.opam" ]; then
-              eval $(opam env --shell=bash 2>/dev/null)
-            fi
-            
             echo "HardCaml development environment ready!"
-            
-            # Check if OCaml is available through opam
-            if command -v ocaml &> /dev/null; then
-              echo "OCaml version: $(ocaml -version 2>&1 | head -1)"
-            else
-              echo "OCaml: Not found (run setup commands below)"
-            fi
-            
+            echo "OCaml version: $(ocaml -version 2>&1 | head -1)"
+            echo "Dune version: $(dune --version)"
             echo "Z3 version: $(z3 --version)"
-            
-            # Check if opam is initialized
-            if [ ! -d "$HOME/.opam" ]; then
-              echo ""
-              echo "First time setup:"
-              echo "  make setup"
-            else
-              echo ""
-              echo "Opam environment loaded automatically"
-              echo "Run 'make info' to see available commands"
-            fi
+            echo ""
+            echo "Run 'make info' to see available commands"
           '';
         };
       });

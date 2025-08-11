@@ -24,17 +24,14 @@ CONSTRAINTS_DIR = constraints
 # Default target
 all: build tools roms
 
-# First time setup
+# Setup OCaml dependencies via opam (Nix provides system tools)
 setup:
-	@echo "Setting up OCaml environment..."
-	@if [ -z "$$OPAMROOT" ]; then OPAMROOT="$$HOME/.opam"; fi; \
-	if [ ! -d "$$OPAMROOT" ]; then \
-		opam init --root "$$OPAMROOT" --disable-sandboxing --shell-setup --yes; \
-	fi; \
-	eval $$(opam env --root="$$OPAMROOT" --shell=bash); \
-	opam switch show --root="$$OPAMROOT" || opam switch create . ocaml-system --yes --root="$$OPAMROOT"; \
-	opam install . --deps-only --with-test --yes --confirm-level=unsafe-yes --root="$$OPAMROOT"; \
-	opam install ocamlformat --yes --confirm-level=unsafe-yes --root="$$OPAMROOT"
+	@echo "Setting up OCaml dependencies via opam..."
+	@if [ ! -d "$$HOME/.opam" ]; then \
+		opam init --disable-sandboxing --shell-setup --yes; \
+	fi
+	eval $$(opam env)
+	opam install . --deps-only --with-test --yes --confirm-level=unsafe-yes
 
 # Build the OCaml project
 build:
@@ -61,16 +58,12 @@ synth: build
 # Format all OCaml source files
 format:
 	@echo "Formatting OCaml source files..."
-	@if [ -z "$$OPAMROOT" ]; then OPAMROOT="$$HOME/.opam"; fi; \
-	eval $$(opam env --root="$$OPAMROOT" --shell=bash); \
 	ocamlformat --inplace $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build")
 
 # Check if files are properly formatted (non-zero exit if not formatted)
 check-format:
 	@echo "Checking OCaml code formatting..."
-	@if [ -z "$$OPAMROOT" ]; then OPAMROOT="$$HOME/.opam"; fi; \
-	eval $$(opam env --root="$$OPAMROOT" --shell=bash); \
-	if ! ocamlformat --check $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build"); then \
+	@if ! ocamlformat --check $$(find src test -name "*.ml" -o -name "*.mli" | grep -v "_build"); then \
 		echo "Code is not properly formatted. Run 'make format' to fix."; \
 		exit 1; \
 	else \
