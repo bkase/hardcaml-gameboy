@@ -21,8 +21,8 @@
             src = pkgs.fetchFromGitHub {
               owner = "janestreet";
               repo = "ppx_hardcaml";
-              rev = "main";
-              sha256 = pkgs.lib.fakeHash;
+              rev = "master";
+              sha256 = "sha256-Y4WEuEcNxOOwux3P5GVvDzytO49tP3hnxTRbTZJtaIc=";
             };
             buildInputs = with oself; [ ppx_jane ppx_deriving hardcaml ];
             propagatedBuildInputs = with oself; [ base ppx_jane ppx_deriving hardcaml ];
@@ -35,8 +35,8 @@
             src = pkgs.fetchFromGitHub {
               owner = "janestreet";
               repo = "hardcaml";
-              rev = "main";
-              sha256 = pkgs.lib.fakeHash;
+              rev = "master";
+              sha256 = "sha256-48WZz+/oM3WMT0jtsHm9KANlQxLTQLNXB87wIm9dyQ8=";
             };
             buildInputs = with oself; [ ppx_jane bin_prot zarith topological_sort ];
             propagatedBuildInputs = with oself; [ base stdio ppx_jane bin_prot zarith topological_sort ];
@@ -49,8 +49,8 @@
             src = pkgs.fetchFromGitHub {
               owner = "janestreet";
               repo = "hardcaml_waveterm";
-              rev = "main";
-              sha256 = pkgs.lib.fakeHash;
+              rev = "master";
+              sha256 = "sha256-GbcV7sxUdwvaGQ2Vz2btgIsM+9OaHlnJz4MwOGy7/b8=";
             };
             buildInputs = with oself; [ hardcaml ];
             propagatedBuildInputs = with oself; [ hardcaml base stdio ];
