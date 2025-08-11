@@ -78,6 +78,8 @@ submodules:
 
 # Build SameBoy library with fake gcc wrapper
 vendor: submodules
+	@echo "Building cppp tool..."
+	PATH="$(CURDIR)/tools:$$PATH" $(MAKE) -C vendor/cppp
 	@echo "Building SameBoy library..."
 	@mkdir -p $(SAMEBOY_BUILD)
 	PATH="$(CURDIR)/tools:$(CURDIR)/vendor/cppp:$$PATH" $(MAKE) -C $(SAMEBOY_DIR) lib
