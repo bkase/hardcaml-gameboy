@@ -29,7 +29,8 @@ setup:
 	@echo "Setting up OCaml environment..."
 	opam init --disable-sandboxing --shell-setup --yes
 	eval $$(opam env)
-	opam install . --with-dev-setup --with-test --yes --confirm-level=unsafe-yes
+	opam install . --deps-only --with-test --yes --confirm-level=unsafe-yes
+	opam install ocamlformat --yes --confirm-level=unsafe-yes
 
 # Build the OCaml project
 build:
