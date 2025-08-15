@@ -48,4 +48,14 @@
    ppu)
  (flags (:standard -w +26+8+11 -warn-error +26+8+11)))
 
+(test
+ (name test_bg_fetcher)
+ (libraries 
+   hardcaml
+   hardcaml_waveterm
+   base
+   stdio
+   ppu)
+ (flags (:standard -w +26+8+11 -warn-error +26+8+11)))
+
 
