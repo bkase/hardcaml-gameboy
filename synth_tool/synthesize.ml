@@ -20,14 +20,14 @@ let write_verilog_file ~filename ~circuit =
   Unix.close stdout_backup ;
   printf "Generated %s\n%!" filename
 
-let synthesize_checker_fill () =
-  printf "Synthesizing Checker_fill module...\n%!" ;
-  let module I = Ppu.Checker_fill.I in
-  let module O = Ppu.Checker_fill.O in
+let synthesize_bg_fetcher_dmg () =
+  printf "Synthesizing Bg_fetcher_dmg module...\n%!" ;
+  let module I = Ppu.Bg_fetcher_dmg.I in
+  let module O = Ppu.Bg_fetcher_dmg.O in
   let module Circuit = Circuit.With_interface (I) (O) in
   let scope = Scope.create ~flatten_design:false () in
-  let circuit = Circuit.create_exn ~name:"checker_fill" (Ppu.Checker_fill.create scope) in
-  write_verilog_file ~filename:"synth/checker_fill.v" ~circuit
+  let circuit = Circuit.create_exn ~name:"bg_fetcher_dmg" (Ppu.Bg_fetcher_dmg.create scope) in
+  write_verilog_file ~filename:"synth/bg_fetcher_dmg.v" ~circuit
 
 let synthesize_framebuf () =
   printf "Synthesizing Framebuf module...\n%!" ;
@@ -58,7 +58,7 @@ let () =
   let _ = Unix.system "mkdir -p synth" in
 
   (* Synthesize each module *)
-  synthesize_checker_fill () ;
+  synthesize_bg_fetcher_dmg () ;
   synthesize_framebuf () ;
   synthesize_top_checker_to_framebuf () ;
 

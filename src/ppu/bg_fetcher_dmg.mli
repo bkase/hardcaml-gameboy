@@ -1,6 +1,7 @@
 open Hardcaml
 
-(** FSM-based checkerboard pattern generator *)
+(** DMG Background Fetcher - Implements minimal background fetching using tilemap +
+    tiledata *)
 
 module I : sig
   type 'a t =
@@ -26,16 +27,17 @@ module O : sig
   [@@deriving hardcaml]
 end
 
-(** Create checker_fill FSM that generates checkerboard pattern
-    - Pattern: (x>>shift XOR y>>shift) & 1 determines color where shift = log2(block_size)
-    - White (Constants.rgb555_white) for pattern=0, Black (Constants.rgb555_black) for
-      pattern=1
+(** Create bg_fetcher_dmg that generates checkerboard pattern via tilemap + tiledata path
+    - Uses real PPU fetching process: tilemap lookup -> tile data fetch -> pixel decode
+    - Hardcoded tilemap: XOR checkerboard pattern with tile 0 (black) and tile 1 (white)
+    - Hardcoded tiledata: Tile 0 = all 0xFF (black), Tile 1 = all 0x00 (white)
+    - BGP palette: 0xE4 (standard GameBoy palette)
     - 1 pixel per clock cycle throughput
     - Total Constants.total_pixels cycles to fill entire frame
     - Addressing: Outputs pixel addresses 0-(Constants.total_pixels-1) (word address =
       pixel address) where address = y * Constants.screen_width + x for coordinate (x,y)
 
     Reset behavior: All internal registers are reset asynchronously when reset signal is
-    high (active-high). This initializes the FSM to idle state, clearing x/y counters and
-    running flag. *)
+    high (active-high). This initializes the FSM to idle state, clearing all counters and
+    state machine state. *)
 val create : Scope.t -> Signal.t I.t -> Signal.t O.t

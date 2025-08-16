@@ -8,44 +8,37 @@
   (source_tree ../vendor/SameBoy))
  (action
   (progn
-   (chdir %{workspace_root} (run make tools roms))
-   (with-stdout-to %{targets} (echo "done")))))
+   (chdir
+    %{workspace_root}
+    (run make tools roms))
+   (with-stdout-to
+    %{targets}
+    (echo "done")))))
 
 (test
  (name oracle_lockstep)
- (libraries 
-   alcotest
-   hardcaml
-   hardcaml_waveterm
-   core
-   core_unix 
-   core_unix.sys_unix
-   ppu)
- (deps
-  tools_and_roms_built)
- (flags (:standard -w +26+8+11 -warn-error +26+8+11))
+ (libraries
+  alcotest
+  hardcaml
+  hardcaml_waveterm
+  core
+  core_unix
+  core_unix.sys_unix
+  ppu)
+ (deps tools_and_roms_built)
+ (flags
+  (:standard -w +26+8+11 -warn-error +26+8+11))
  (action
   (progn
    (run %{test}))))
 
 (executable
  (name test_framebuf_assertion)
- (libraries 
-   hardcaml
-   base
-   stdio
-   ppu))
+ (libraries hardcaml base stdio ppu))
+
 
 (test
- (name test_checker_fill_reset_start)
- (libraries 
-   alcotest
-   hardcaml
-   hardcaml_waveterm
-   core
-   base
-   stdio
-   ppu)
- (flags (:standard -w +26+8+11 -warn-error +26+8+11)))
-
-
+ (name test_bg_fetcher)
+ (libraries hardcaml hardcaml_waveterm base stdio ppu)
+ (flags
+  (:standard -w +26+8+11 -warn-error +26+8+11)))
