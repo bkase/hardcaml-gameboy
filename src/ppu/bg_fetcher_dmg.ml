@@ -148,10 +148,10 @@ let create _scope (i : _ I.t) =
   Always.(
     compile
       [ busy
-        <-- (sm.is Init_coords |: sm.is Fetch_tile_no_1 |: sm.is Fetch_tile_no_2
+        <-- ((sm.is Init_coords |: sm.is Fetch_tile_no_1 |: sm.is Fetch_tile_no_2
            |: sm.is Fetch_tile_low_1 |: sm.is Fetch_tile_low_2 |: sm.is Fetch_tile_high_1
-           |: sm.is Fetch_tile_high_2 |: sm.is Push_pixels)
-      ; done_ <-- sm.is Done_state
+           |: sm.is Fetch_tile_high_2 |: sm.is Push_pixels) &: ~:(i.reset))
+      ; done_ <-- (sm.is Done_state &: ~:(i.reset))
       ; fb_a_wdata <-- rgb555_pixel
       ; (* fb_a_we will be set within the state machine *)
         sm.switch
@@ -234,5 +234,5 @@ let create _scope (i : _ I.t) =
   ; done_ = done_.value
   ; fb_a_addr = addr_pix
   ; fb_a_wdata = fb_a_wdata.value
-  ; fb_a_we = fb_a_we.value
+  ; fb_a_we = fb_a_we.value &: ~:(i.reset)
   }
