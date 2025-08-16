@@ -26,13 +26,13 @@ Replace the synthetic checkerboard pattern generator with a minimal background f
 ✅ test_tilemap_addressing() - Core PPU addressing logic verified
 ✅ test_tile_data_decoding() - 2BPP implementation ready  
 ✅ test_bgp_palette() - Color mapping validated
-✅ test_state_transitions() - Framework verified with current implementation
-❌ test_fetch_timing() - Expected failure (needs real bg_fetcher_dmg)
-❌ test_checkerboard_output() - Expected failure (needs real bg_fetcher_dmg)  
-❌ test_control_signals() - Expected failure (needs real bg_fetcher_dmg)
+✅ test_state_transitions() - State machine working correctly
+✅ test_fetch_timing() - Fetch timing verified (12-cycle initial delay + 1 cycle per pixel)
+✅ test_checkerboard_output() - Full frame checkerboard pattern verified (23,040 pixels)
+✅ test_control_signals() - Reset/start signal handling verified
 ```
 
-## Phase 2: Create BG Fetcher Module Using HardCaml State Machine API 🚧 NEXT
+## Phase 2: Create BG Fetcher Module Using HardCaml State Machine API ✅ COMPLETED
 
 **src/ppu/bg_fetcher_dmg.mli** - Interface matching Checker_fill exactly:
 ```ocaml
@@ -133,7 +133,7 @@ Key implementation details:
    - Use mux to simulate VRAM reads from hardcoded data
    - BGP=0xE4: map color 0→0x7FFF (white), 3→0x0000 (black)
 
-## Phase 3: Integration Changes
+## Phase 3: Integration Changes ✅ COMPLETED
 
 **Modify src/ppu/top_checker_to_framebuf.ml**:
 ```ocaml
@@ -144,7 +144,7 @@ let checker_out = Checker_fill.create scope ...
 let checker_out = Bg_fetcher_dmg.create scope ...
 ```
 
-## Phase 4: Verify Tests Pass
+## Phase 4: Verify Tests Pass ✅ COMPLETED
 
 1. **Run new test**: `dune test test_bg_fetcher`
    - Verify state transitions are correct
@@ -156,7 +156,7 @@ let checker_out = Bg_fetcher_dmg.create scope ...
 3. **Run existing tests**: `make test`
    - All tests should still pass
 
-## Phase 5: Clean Up Old Implementation
+## Phase 5: Clean Up Old Implementation ✅ COMPLETED
 
 **Files to remove after verification**:
 - `src/ppu/checker_fill.ml`
@@ -190,11 +190,11 @@ let checker_out = Bg_fetcher_dmg.create scope ...
 ✅ Core PPU logic tests pass (tilemap, 2BPP, BGP palette)  
 ✅ State machine framework validated with existing implementation  
 
-### Phase 2-5 🚧 REMAINING  
-⏳ bg_fetcher_dmg.ml uses proper HardCaml Always API  
-⏳ oracle_lockstep.ml reports "✓ All pixels match! (full frame, 23040 pixels)"  
-⏳ All tests pass with `make test`  
-⏳ Old synthetic implementation removed cleanly
+### Phase 2-5 ✅ COMPLETED  
+✅ bg_fetcher_dmg.ml uses proper HardCaml Always API  
+✅ oracle_lockstep.ml reports "✓ All pixels match! (full frame, 23040 pixels)"  
+✅ All tests pass with `make test`  
+✅ Old synthetic implementation removed cleanly
 
 ## Future Extensions (Not This Step)
 - Replace hardcoded VRAM with real memory
