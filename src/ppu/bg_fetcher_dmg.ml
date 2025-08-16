@@ -70,7 +70,6 @@ let create _scope (i : _ I.t) =
   let pixel_in_tile = Always.Variable.reg spec ~width:3 in
   (* 0-7 pixels within tile *)
 
-
   (* Timing control variables - simplified with cycle counter *)
   let cycle_counter = Always.Variable.reg spec ~width:4 in
   (* 0-11 for initial delay timing *)
@@ -167,7 +166,8 @@ let create _scope (i : _ I.t) =
               ] )
           ; ( Init_coords
             , [ fb_a_we <-- gnd
-              ; (* Wait one cycle for coordinate initialization, then start initial delay *)
+              ; (* Wait one cycle for coordinate initialization, then start initial
+                   delay *)
                 sm.set_next Initial_delay
               ] )
           ; ( Initial_delay
