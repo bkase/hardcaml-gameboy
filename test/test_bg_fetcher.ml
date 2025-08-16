@@ -111,7 +111,8 @@ let test_state_transitions () =
     let cycle_count = ref 1 in
     (* Already cycled once after start *)
     let pixels_written = ref 0 in
-    let last_addr = ref (-1) in (* Initialize to invalid address to count first pixel *)
+    let last_addr = ref (-1) in
+    (* Initialize to invalid address to count first pixel *)
 
     (* Monitor the first tile's worth of operation *)
     let max_cycles_per_tile = 21 in

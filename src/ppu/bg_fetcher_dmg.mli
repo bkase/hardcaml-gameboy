@@ -1,6 +1,7 @@
 open Hardcaml
 
-(** DMG Background Fetcher - Implements minimal background fetching using tilemap + tiledata *)
+(** DMG Background Fetcher - Implements minimal background fetching using tilemap +
+    tiledata *)
 
 module I : sig
   type 'a t =
@@ -29,7 +30,7 @@ end
 (** Create bg_fetcher_dmg that generates checkerboard pattern via tilemap + tiledata path
     - Uses real PPU fetching process: tilemap lookup -> tile data fetch -> pixel decode
     - Hardcoded tilemap: XOR checkerboard pattern with tile 0 (black) and tile 1 (white)
-    - Hardcoded tiledata: Tile 0 = all 0xFF (black), Tile 1 = all 0x00 (white)  
+    - Hardcoded tiledata: Tile 0 = all 0xFF (black), Tile 1 = all 0x00 (white)
     - BGP palette: 0xE4 (standard GameBoy palette)
     - 1 pixel per clock cycle throughput
     - Total Constants.total_pixels cycles to fill entire frame
