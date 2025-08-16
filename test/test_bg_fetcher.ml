@@ -14,7 +14,7 @@ let checkerboard_pattern x y =
   let tile_x = x / 8 in
   let tile_y = y / 8 in
   let tile_index = tile_x lxor tile_y land 1 in
-  if tile_index = 0 then Ppu.Constants.rgb555_white else Ppu.Constants.rgb555_black
+  if tile_index = 0 then Ppu.Constants.rgb555_black else Ppu.Constants.rgb555_white
 
 (** Convert pixel coordinates to linear address *)
 let pixel_address x y = (y * Ppu.Constants.screen_width) + x
@@ -642,13 +642,14 @@ let test_control_signals () =
     for i = 1 to 15 do
       let busy = Bits.to_bool !(outputs.busy) in
       let addr = Bits.to_int !(outputs.fb_a_addr) in
-      printf "      Cycle %d: busy=%b, addr=%d\n" i busy addr;
+      printf "      Cycle %d: busy=%b, addr=%d\n" i busy addr ;
       if busy then Cyclesim.cycle sim
     done ;
 
     let addr_before_spurious_start = Bits.to_int !(outputs.fb_a_addr) in
     let busy_before_spurious = Bits.to_bool !(outputs.busy) in
-    printf "    Before spurious start: busy=%b, addr=%d\n" busy_before_spurious addr_before_spurious_start;
+    printf "    Before spurious start: busy=%b, addr=%d\n" busy_before_spurious
+      addr_before_spurious_start ;
 
     (* Try to restart with start signal while busy *)
     inputs.start := Bits.vdd ;
@@ -657,7 +658,8 @@ let test_control_signals () =
 
     let addr_after_spurious_start = Bits.to_int !(outputs.fb_a_addr) in
     let still_busy = Bits.to_bool !(outputs.busy) in
-    printf "    After spurious start: busy=%b, addr=%d\n" still_busy addr_after_spurious_start;
+    printf "    After spurious start: busy=%b, addr=%d\n" still_busy
+      addr_after_spurious_start ;
 
     if not still_busy then failwith "FAIL: FSM should still be busy after spurious start" ;
 
@@ -677,8 +679,8 @@ let test_control_signals () =
     let busy_after_reset_during_op = Bits.to_bool !(outputs.busy) in
     let done_after_reset_during_op = Bits.to_bool !(outputs.done_) in
     let we_after_reset_during_op = Bits.to_bool !(outputs.fb_a_we) in
-    printf "    After reset during operation: busy=%b, done=%b, we=%b\n" 
-      busy_after_reset_during_op done_after_reset_during_op we_after_reset_during_op;
+    printf "    After reset during operation: busy=%b, done=%b, we=%b\n"
+      busy_after_reset_during_op done_after_reset_during_op we_after_reset_during_op ;
 
     if
       busy_after_reset_during_op || done_after_reset_during_op || we_after_reset_during_op
@@ -719,15 +721,15 @@ let test_control_signals () =
       !cycle_count ;
 
     (* Reset to test done signal on fresh start *)
-    printf "    Before reset: busy=%b\n" (Bits.to_bool !(outputs.busy));
+    printf "    Before reset: busy=%b\n" (Bits.to_bool !(outputs.busy)) ;
     inputs.reset := Bits.vdd ;
-    printf "    Reset asserted: busy=%b\n" (Bits.to_bool !(outputs.busy));
+    printf "    Reset asserted: busy=%b\n" (Bits.to_bool !(outputs.busy)) ;
     Cyclesim.cycle sim ;
-    printf "    After reset cycle: busy=%b\n" (Bits.to_bool !(outputs.busy));
+    printf "    After reset cycle: busy=%b\n" (Bits.to_bool !(outputs.busy)) ;
     inputs.reset := Bits.gnd ;
-    printf "    Reset deasserted: busy=%b\n" (Bits.to_bool !(outputs.busy));
+    printf "    Reset deasserted: busy=%b\n" (Bits.to_bool !(outputs.busy)) ;
     Cyclesim.cycle sim ;
-    printf "    After deassertion cycle: busy=%b\n" (Bits.to_bool !(outputs.busy));
+    printf "    After deassertion cycle: busy=%b\n" (Bits.to_bool !(outputs.busy)) ;
 
     printf "  Testing busy signal correctness...\n" ;
 
@@ -735,7 +737,8 @@ let test_control_signals () =
     let busy_when_idle = Bits.to_bool !(outputs.busy) in
     let done_when_idle = Bits.to_bool !(outputs.done_) in
     let we_when_idle = Bits.to_bool !(outputs.fb_a_we) in
-    printf "    When idle: busy=%b, done=%b, we=%b\n" busy_when_idle done_when_idle we_when_idle;
+    printf "    When idle: busy=%b, done=%b, we=%b\n" busy_when_idle done_when_idle
+      we_when_idle ;
     if busy_when_idle then failwith "FAIL: Busy should be low when idle" ;
 
     (* Start operation *)

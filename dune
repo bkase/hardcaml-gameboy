@@ -2,8 +2,3 @@
  (public_name debug_pixels)
  (name debug_pixels)
  (libraries ppu base stdio hardcaml))
-
-(executable
- (public_name debug_spurious_start)
- (name debug_spurious_start)
- (libraries ppu base stdio hardcaml))

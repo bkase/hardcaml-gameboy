@@ -40,36 +40,7 @@ module State = struct
     | Done_state
   [@@deriving sexp_of]
 
-  let compare a b =
-    match a, b with
-    | Idle, Idle -> 0
-    | Idle, _ -> -1
-    | _, Idle -> 1
-    | Init_coords, Init_coords -> 0
-    | Init_coords, _ -> -1
-    | _, Init_coords -> 1
-    | Fetch_tile_no_1, Fetch_tile_no_1 -> 0
-    | Fetch_tile_no_1, _ -> -1
-    | _, Fetch_tile_no_1 -> 1
-    | Fetch_tile_no_2, Fetch_tile_no_2 -> 0
-    | Fetch_tile_no_2, _ -> -1
-    | _, Fetch_tile_no_2 -> 1
-    | Fetch_tile_low_1, Fetch_tile_low_1 -> 0
-    | Fetch_tile_low_1, _ -> -1
-    | _, Fetch_tile_low_1 -> 1
-    | Fetch_tile_low_2, Fetch_tile_low_2 -> 0
-    | Fetch_tile_low_2, _ -> -1
-    | _, Fetch_tile_low_2 -> 1
-    | Fetch_tile_high_1, Fetch_tile_high_1 -> 0
-    | Fetch_tile_high_1, _ -> -1
-    | _, Fetch_tile_high_1 -> 1
-    | Fetch_tile_high_2, Fetch_tile_high_2 -> 0
-    | Fetch_tile_high_2, _ -> -1
-    | _, Fetch_tile_high_2 -> 1
-    | Push_pixels, Push_pixels -> 0
-    | Push_pixels, _ -> -1
-    | _, Push_pixels -> 1
-    | Done_state, Done_state -> 0
+  let compare a b = Poly.compare a b
 
   let all =
     [ Idle
@@ -122,17 +93,16 @@ let create _scope (i : _ I.t) =
     mux2 (lsb tile_id) (of_int ~width:8 0x00) (of_int ~width:8 0xFF)
   in *)
 
-  (* Simple checkerboard pattern: use (x XOR y) to determine color *)
-  let blk_x =
-    uresize (srl x.value Constants.checker_shift_bits) Constants.rgb555_channel_width
-  in
-  let blk_y =
-    uresize (srl y.value Constants.checker_shift_bits) Constants.rgb555_channel_width
-  in
-  let color_sel = lsb (blk_x ^: blk_y) in
+  (* Simple checkerboard pattern: use (tile_x XOR tile_y) to determine color *)
+  (* Calculate color based on current coordinates to avoid race condition *)
+  let current_tile_x = srl x.value Constants.checker_shift_bits in
+  (* x / 8 *)
+  let current_tile_y = srl y.value Constants.checker_shift_bits in
+  (* y / 8 *)
+  let color_sel = lsb (current_tile_x ^: current_tile_y) in
   let white = of_int ~width:Constants.pixel_data_width Constants.rgb555_white in
   let black = of_int ~width:Constants.pixel_data_width Constants.rgb555_black in
-  let rgb555_pixel = mux2 color_sel black white in
+  let rgb555_pixel = mux2 color_sel white black in
 
   (* Calculate pixel address: y * screen_width + x *)
   let y_times_width =
@@ -148,16 +118,18 @@ let create _scope (i : _ I.t) =
   Always.(
     compile
       [ busy
-        <-- ((sm.is Init_coords |: sm.is Fetch_tile_no_1 |: sm.is Fetch_tile_no_2
+        <-- (sm.is Init_coords |: sm.is Fetch_tile_no_1 |: sm.is Fetch_tile_no_2
            |: sm.is Fetch_tile_low_1 |: sm.is Fetch_tile_low_2 |: sm.is Fetch_tile_high_1
-           |: sm.is Fetch_tile_high_2 |: sm.is Push_pixels) &: ~:(i.reset))
-      ; done_ <-- (sm.is Done_state &: ~:(i.reset))
+           |: sm.is Fetch_tile_high_2 |: sm.is Push_pixels
+            &: ~:(sm.is Idle)
+            &: ~:(sm.is Done_state))
+      ; done_ <-- sm.is Done_state
       ; fb_a_wdata <-- rgb555_pixel
       ; (* fb_a_we will be set within the state machine *)
         sm.switch
           [ ( Idle
             , [ fb_a_we <-- gnd
-              ; when_ i.start
+              ; when_ (i.start &: ~:(i.reset))
                   [ (* Initialize all coordinates and timing *)
                     x <--. 0
                   ; y <--. 0
@@ -224,15 +196,17 @@ let create _scope (i : _ I.t) =
                   ; (* Increment counters *)
                     pixel_count <-- pixel_count.value +:. 1
                   ; pixel_in_tile <-- pixel_in_tile.value +:. 1
+                  ; (* After 8 pixels, reset pixel counter but continue pushing *)
+                    when_ (pixel_in_tile.value ==:. 7) [ pixel_in_tile <--. 0 ]
                   ]
               ] )
           ; Done_state, [ fb_a_we <-- gnd; sm.set_next Idle ]
           ]
       ]) ;
 
-  { O.busy = busy.value
-  ; done_ = done_.value
+  { O.busy = busy.value &: ~:(i.reset) &: ~:(sm.is Idle) &: ~:(sm.is Done_state)
+  ; done_ = done_.value &: ~:(i.reset)
   ; fb_a_addr = addr_pix
   ; fb_a_wdata = fb_a_wdata.value
-  ; fb_a_we = fb_a_we.value &: ~:(i.reset)
+  ; fb_a_we = fb_a_we.value &: ~:(i.reset) &: ~:(sm.is Idle) &: ~:(sm.is Done_state)
   }
