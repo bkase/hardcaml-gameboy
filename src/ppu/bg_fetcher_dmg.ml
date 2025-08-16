@@ -29,7 +29,8 @@ end
 module State = struct
   type t =
     | Idle
-    | Init_coords (* New state to allow coordinate initialization *)
+    | Init_coords (* Initialize coordinates *)
+    | Initial_delay (* 12-cycle initial delay (first fetch sequence) *)
     | Fetch_tile_no_1 (* First cycle of fetch tile no *)
     | Fetch_tile_no_2 (* Second cycle of fetch tile no *)
     | Fetch_tile_low_1 (* First cycle of fetch tile low *)
@@ -45,6 +46,7 @@ module State = struct
   let all =
     [ Idle
     ; Init_coords
+    ; Initial_delay
     ; Fetch_tile_no_1
     ; Fetch_tile_no_2
     ; Fetch_tile_low_1
@@ -67,16 +69,11 @@ let create _scope (i : _ I.t) =
   let y = Always.Variable.reg spec ~width:Constants.coord_width in
   let pixel_in_tile = Always.Variable.reg spec ~width:3 in
   (* 0-7 pixels within tile *)
-  let pixel_count = Always.Variable.reg spec ~width:3 in
-  (* Debug counter *)
 
-  (* Timing control variables *)
-  let fetch_cycle = Always.Variable.reg spec ~width:1 in
-  (* 2-cycle timing for fetch states *)
-  let initial_fetch_done = Always.Variable.reg spec ~width:1 in
-  (* Track initial 12-cycle delay *)
-  let first_pixel = Always.Variable.reg spec ~width:1 in
-  (* Track if this is the very first pixel *)
+
+  (* Timing control variables - simplified with cycle counter *)
+  let cycle_counter = Always.Variable.reg spec ~width:4 in
+  (* 0-11 for initial delay timing *)
 
   (* Control signals - use a running register like checker_fill *)
   let running = Always.Variable.reg spec ~width:1 in
@@ -84,14 +81,26 @@ let create _scope (i : _ I.t) =
   let fb_a_we = Always.Variable.wire ~default:gnd in
   let fb_a_wdata = Always.Variable.wire ~default:(zero Constants.pixel_data_width) in
 
-  (* Hardcoded tilemap: XOR checkerboard pattern - not used in simplified version *)
-  (* let tile_number = lsb (tile_x.value ^: tile_y.value) in *)
-  (* XOR pattern: 0 or 1 *)
-
-  (* Hardcoded tile data: Tile 0 = 0xFF (black), Tile 1 = 0x00 (white) - not used *)
-  (* let get_tile_data tile_id =
-    mux2 (lsb tile_id) (of_int ~width:8 0x00) (of_int ~width:8 0xFF)
-  in *)
+  (* VRAM interface preparation - currently hardcoded but designed for future expansion *)
+  (* 
+   * Future VRAM interface will include:
+   * 
+   * Tilemap interface:
+   *   - Input: tile_x (5-bit), tile_y (5-bit) 
+   *   - Address: $9800 + (tile_y * 32 + tile_x)
+   *   - Output: tile_id (8-bit)
+   *
+   * Tile data interface:
+   *   - Input: tile_id (8-bit), row_in_tile (3-bit)
+   *   - Address: $8000 + (tile_id * 16 + row_in_tile * 2)
+   *   - Output: tile_low (8-bit), tile_high (8-bit)
+   *
+   * 2BPP decoder:
+   *   - Input: tile_low, tile_high, pixel_in_row (3-bit)
+   *   - Output: color_index (2-bit) for BGP palette lookup
+   *
+   * This structure will replace the current hardcoded checkerboard pattern.
+   *)
 
   (* Calculate next coordinates for color calculation (1-cycle ahead) *)
   let at_end_of_line = x.value ==:. Constants.screen_width - 1 in
@@ -104,7 +113,7 @@ let create _scope (i : _ I.t) =
       y.value
   in
 
-  (* Use next coordinates for color calculation (like checker_fill) *)
+  (* Generate checkerboard pattern (original implementation) *)
   let blk_x =
     uresize (srl next_x Constants.checker_shift_bits) Constants.rgb555_channel_width
   in
@@ -117,11 +126,13 @@ let create _scope (i : _ I.t) =
   let rgb555_pixel = mux2 color_sel white black in
 
   (* Calculate pixel address: y * screen_width + x (using current coordinates) *)
+  let y_extended = uresize y.value Constants.pixel_addr_width in
+  let x_extended = uresize x.value Constants.pixel_addr_width in
   let y_times_width =
-    sll (uresize y.value Constants.pixel_addr_width) Constants.screen_width_shift_7
-    +: sll (uresize y.value Constants.pixel_addr_width) Constants.screen_width_shift_5
+    sll y_extended Constants.screen_width_shift_7
+    +: sll y_extended Constants.screen_width_shift_5
   in
-  let addr_pix = y_times_width +: uresize x.value Constants.pixel_addr_width in
+  let addr_pix = y_times_width +: x_extended in
 
   (* Width-aware constants *)
   let total_pixels_minus_1 = Constants.total_pixels - 1 in
@@ -150,27 +161,25 @@ let create _scope (i : _ I.t) =
                     x <--. 0
                   ; y <--. 0
                   ; pixel_in_tile <--. 0
-                  ; pixel_count <--. 0
-                  ; (* Initialize debug counter *)
-                    fetch_cycle <--. 0
-                  ; initial_fetch_done <--. 0
-                  ; first_pixel <--. 1
-                  ; (* Mark that we need to write the first pixel at (0,0) *)
-                    sm.set_next Init_coords
+                  ; cycle_counter <--. 0
+                  ; sm.set_next Init_coords
                   ]
               ] )
           ; ( Init_coords
             , [ fb_a_we <-- gnd
-              ; (* Wait one cycle for coordinate initialization, then start fetch
-                   pipeline *)
-                sm.set_next Fetch_tile_no_1
+              ; (* Wait one cycle for coordinate initialization, then start initial delay *)
+                sm.set_next Initial_delay
+              ] )
+          ; ( Initial_delay
+            , [ fb_a_we <-- gnd
+              ; cycle_counter <-- cycle_counter.value +:. 1
+              ; (* 12-cycle initial delay - simple counter approach *)
+                when_ (cycle_counter.value ==:. 11) [ sm.set_next Push_pixels ]
               ] )
           ; (* 2-cycle fetch tile number *)
             ( Fetch_tile_no_1
             , [ fb_a_we <-- gnd
-              ; (* Reset pixel counters when entering new tile *)
-                pixel_count <--. 0
-              ; pixel_in_tile <--. 0
+              ; pixel_in_tile <--. 0 (* Reset pixel counter for new tile *)
               ; sm.set_next Fetch_tile_no_2
               ] )
           ; Fetch_tile_no_2, [ fb_a_we <-- gnd; sm.set_next Fetch_tile_low_1 ]
@@ -181,21 +190,8 @@ let create _scope (i : _ I.t) =
             Fetch_tile_high_1, [ fb_a_we <-- gnd; sm.set_next Fetch_tile_high_2 ]
           ; ( Fetch_tile_high_2
             , [ fb_a_we <-- gnd
-              ; (* First time through, repeat the fetch cycle for 12-cycle initial
-                   delay *)
-                if_
-                  (initial_fetch_done.value ==:. 0)
-                  [ initial_fetch_done <--. 1
-                  ; sm.set_next Fetch_tile_no_1 (* Repeat fetch cycle once more *)
-                  ]
-                  [ pixel_in_tile <--. 0
-                  ; (* Reset pixel counter for new tile *)
-                    pixel_count <--. 0
-                  ; (* Reset debug counter *)
-                    (* Don't reset coordinates - they should continue from where they left
-                       off *)
-                    sm.set_next Push_pixels (* Proceed to pixel pushing *)
-                  ]
+              ; pixel_in_tile <--. 0 (* Reset pixel counter for new tile *)
+              ; sm.set_next Push_pixels (* Always proceed to pixel pushing *)
               ] )
           ; ( Push_pixels
             , [ (* Output pixel to framebuffer at current coordinates *)
@@ -209,9 +205,8 @@ let create _scope (i : _ I.t) =
                   ; when_
                       (x.value ==:. Constants.screen_width - 1)
                       [ x <--. 0; y <-- y.value +:. 1 ]
-                  ; (* Increment counters *)
-                    pixel_count <-- pixel_count.value +:. 1
-                  ; pixel_in_tile <-- pixel_in_tile.value +:. 1
+                  ; (* Increment pixel in tile counter *)
+                    pixel_in_tile <-- pixel_in_tile.value +:. 1
                   ; (* After 8 pixels, reset pixel counter but continue pushing *)
                     when_ (pixel_in_tile.value ==:. 7) [ pixel_in_tile <--. 0 ]
                   ]
