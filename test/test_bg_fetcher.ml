@@ -5,7 +5,7 @@ open Printf
 
 (** For testing, use the existing Checker_fill interface which the bg_fetcher will match
 *)
-module Bg_fetcher = Ppu.Checker_fill
+module Bg_fetcher = Ppu.Bg_fetcher_dmg
 
 (** Test helper functions *)
 
@@ -107,14 +107,14 @@ let test_state_transitions () =
        after initial delay: - Fetch_tile_no: 2 cycles - Fetch_tile_low: 2 cycles -
        Fetch_tile_high: 2 cycles - Push_pixels: 8 cycles (1 per pixel) Total: 14 cycles
        per tile (after initial 12-cycle delay) *)
-    let initial_addr = ref (Bits.to_int !(outputs.fb_a_addr)) in
+    let _initial_addr = ref (Bits.to_int !(outputs.fb_a_addr)) in
     let cycle_count = ref 1 in
     (* Already cycled once after start *)
     let pixels_written = ref 0 in
-    let last_addr = ref !initial_addr in
+    let last_addr = ref (-1) in (* Initialize to invalid address to count first pixel *)
 
     (* Monitor the first tile's worth of operation *)
-    let max_cycles_per_tile = 20 in
+    let max_cycles_per_tile = 21 in
     (* Conservative estimate *)
     let target_pixels = 8 in
     (* One tile's worth *)

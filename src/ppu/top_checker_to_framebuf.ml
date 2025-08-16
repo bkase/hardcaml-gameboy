@@ -19,10 +19,10 @@ module O = struct
 end
 
 let create scope (i : _ I.t) =
-  (* Instantiate checker fill pattern generator *)
+  (* Instantiate bg fetcher pattern generator *)
   let checker_out =
-    Checker_fill.create scope
-      { Checker_fill.I.clock = i.clock; reset = i.reset; start = i.start }
+    Bg_fetcher_dmg.create scope
+      { Bg_fetcher_dmg.I.clock = i.clock; reset = i.reset; start = i.start }
   in
 
   (* Instantiate framebuffer *)
