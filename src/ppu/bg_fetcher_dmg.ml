@@ -78,8 +78,8 @@ let create _scope (i : _ I.t) =
   let first_pixel = Always.Variable.reg spec ~width:1 in
   (* Track if this is the very first pixel *)
 
-  (* Control signals *)
-  let busy = Always.Variable.wire ~default:gnd in
+  (* Control signals - use a running register like checker_fill *)
+  let running = Always.Variable.reg spec ~width:1 in
   let done_ = Always.Variable.wire ~default:gnd in
   let fb_a_we = Always.Variable.wire ~default:gnd in
   let fb_a_wdata = Always.Variable.wire ~default:(zero Constants.pixel_data_width) in
@@ -93,18 +93,30 @@ let create _scope (i : _ I.t) =
     mux2 (lsb tile_id) (of_int ~width:8 0x00) (of_int ~width:8 0xFF)
   in *)
 
-  (* Simple checkerboard pattern: use (tile_x XOR tile_y) to determine color *)
-  (* Calculate color based on current coordinates to avoid race condition *)
-  let current_tile_x = srl x.value Constants.checker_shift_bits in
-  (* x / 8 *)
-  let current_tile_y = srl y.value Constants.checker_shift_bits in
-  (* y / 8 *)
-  let color_sel = lsb (current_tile_x ^: current_tile_y) in
+  (* Calculate next coordinates for color calculation (1-cycle ahead) *)
+  let at_end_of_line = x.value ==:. Constants.screen_width - 1 in
+  let next_x = mux2 at_end_of_line (zero Constants.coord_width) (x.value +:. 1) in
+  let next_y =
+    mux2 at_end_of_line
+      (mux2
+         (y.value ==:. Constants.screen_height - 1)
+         (zero Constants.coord_width) (y.value +:. 1))
+      y.value
+  in
+
+  (* Use next coordinates for color calculation (like checker_fill) *)
+  let blk_x =
+    uresize (srl next_x Constants.checker_shift_bits) Constants.rgb555_channel_width
+  in
+  let blk_y =
+    uresize (srl next_y Constants.checker_shift_bits) Constants.rgb555_channel_width
+  in
+  let color_sel = lsb (blk_x ^: blk_y) in
   let white = of_int ~width:Constants.pixel_data_width Constants.rgb555_white in
   let black = of_int ~width:Constants.pixel_data_width Constants.rgb555_black in
   let rgb555_pixel = mux2 color_sel white black in
 
-  (* Calculate pixel address: y * screen_width + x *)
+  (* Calculate pixel address: y * screen_width + x (using current coordinates) *)
   let y_times_width =
     sll (uresize y.value Constants.pixel_addr_width) Constants.screen_width_shift_7
     +: sll (uresize y.value Constants.pixel_addr_width) Constants.screen_width_shift_5
@@ -114,18 +126,22 @@ let create _scope (i : _ I.t) =
   (* Width-aware constants *)
   let total_pixels_minus_1 = Constants.total_pixels - 1 in
 
+  (* Determine when operation is at last pixel *)
+  let at_last_pixel = addr_pix ==:. total_pixels_minus_1 in
+
   (* State machine logic *)
   Always.(
     compile
-      [ busy
-        <-- (sm.is Init_coords |: sm.is Fetch_tile_no_1 |: sm.is Fetch_tile_no_2
-           |: sm.is Fetch_tile_low_1 |: sm.is Fetch_tile_low_2 |: sm.is Fetch_tile_high_1
-           |: sm.is Fetch_tile_high_2 |: sm.is Push_pixels
-            &: ~:(sm.is Idle)
-            &: ~:(sm.is Done_state))
-      ; done_ <-- sm.is Done_state
+      [ done_ <-- (running.value &: at_last_pixel &: sm.is Push_pixels)
       ; fb_a_wdata <-- rgb555_pixel
-      ; (* fb_a_we will be set within the state machine *)
+      ; (* Control running register similar to checker_fill *)
+        running
+        <-- mux2 i.reset gnd
+              (mux2
+                 (i.start &: sm.is Idle)
+                 vdd
+                 (mux2 (at_last_pixel &: sm.is Push_pixels) gnd running.value))
+      ; (* fb_a_we and busy will be derived from running *)
         sm.switch
           [ ( Idle
             , [ fb_a_we <-- gnd
@@ -200,13 +216,13 @@ let create _scope (i : _ I.t) =
                     when_ (pixel_in_tile.value ==:. 7) [ pixel_in_tile <--. 0 ]
                   ]
               ] )
-          ; Done_state, [ fb_a_we <-- gnd; sm.set_next Idle ]
+          ; Done_state, [ fb_a_we <-- gnd; when_ ~:(i.reset) [ sm.set_next Idle ] ]
           ]
       ]) ;
 
-  { O.busy = busy.value &: ~:(i.reset) &: ~:(sm.is Idle) &: ~:(sm.is Done_state)
-  ; done_ = done_.value &: ~:(i.reset)
+  { O.busy = running.value
+  ; done_ = done_.value
   ; fb_a_addr = addr_pix
   ; fb_a_wdata = fb_a_wdata.value
-  ; fb_a_we = fb_a_we.value &: ~:(i.reset) &: ~:(sm.is Idle) &: ~:(sm.is Done_state)
+  ; fb_a_we = running.value &: sm.is Push_pixels
   }
