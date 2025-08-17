@@ -764,27 +764,48 @@ let test_control_signals () =
     printf "  ✗ Control signals test failed: %s\n" (Exn.to_string exn) ;
     raise exn
 
-(** Main test function *)
+(** Convert test functions to alcotest test cases *)
+let test_tilemap_addressing_case () =
+  try test_tilemap_addressing ()
+  with exn -> Alcotest.failf "Tilemap addressing test failed: %s" (Exn.to_string exn)
+
+let test_tile_data_decoding_case () =
+  try test_tile_data_decoding ()
+  with exn -> Alcotest.failf "Tile data decoding test failed: %s" (Exn.to_string exn)
+
+let test_bgp_palette_case () =
+  try test_bgp_palette ()
+  with exn -> Alcotest.failf "BGP palette test failed: %s" (Exn.to_string exn)
+
+let test_state_transitions_case () =
+  try test_state_transitions ()
+  with exn -> Alcotest.failf "State transitions test failed: %s" (Exn.to_string exn)
+
+let test_fetch_timing_case () =
+  try test_fetch_timing ()
+  with exn -> Alcotest.failf "Fetch timing test failed: %s" (Exn.to_string exn)
+
+let test_checkerboard_output_case () =
+  try test_checkerboard_output ()
+  with exn -> Alcotest.failf "Checkerboard output test failed: %s" (Exn.to_string exn)
+
+let test_control_signals_case () =
+  try test_control_signals ()
+  with exn -> Alcotest.failf "Control signals test failed: %s" (Exn.to_string exn)
+
+(** Main test function using alcotest *)
 let () =
-  printf "=== Background Fetcher Comprehensive Tests ===\n\n" ;
-
-  try
-    (* Run all core PPU behavior tests *)
-    test_tilemap_addressing () ;
-    test_tile_data_decoding () ;
-    test_bgp_palette () ;
-
-    (* These tests require the actual bg_fetcher implementation *)
-    printf "\nTests requiring bg_fetcher implementation:\n" ;
-    test_state_transitions () ;
-    test_fetch_timing () ;
-    test_checkerboard_output () ;
-    test_control_signals () ;
-
-    printf "\n=== All background fetcher tests completed! ===\n" ;
-    printf
-      "Note: Some tests are framework placeholders pending bg_fetcher_dmg implementation\n"
-  with exn ->
-    printf "\n=== TEST FAILED ===\n" ;
-    printf "Error: %s\n" (Exn.to_string exn) ;
-    Stdlib.exit 1
+  let open Alcotest in
+  run "Background Fetcher Tests"
+    [ ( "core-ppu-behavior"
+      , [ test_case "Tilemap addressing" `Quick test_tilemap_addressing_case
+        ; test_case "Tile data decoding" `Quick test_tile_data_decoding_case
+        ; test_case "BGP palette application" `Quick test_bgp_palette_case
+        ] )
+    ; ( "bg-fetcher-implementation"
+      , [ test_case "State machine transitions" `Slow test_state_transitions_case
+        ; test_case "Fetch timing verification" `Slow test_fetch_timing_case
+        ; test_case "Checkerboard output generation" `Slow test_checkerboard_output_case
+        ; test_case "Control signals handling" `Slow test_control_signals_case
+        ] )
+    ]

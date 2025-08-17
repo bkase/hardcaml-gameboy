@@ -70,4 +70,18 @@ let test_framebuf_address_assertion () =
   printf "      and can be observed in waveforms for debugging purposes.\n" ;
   printf "      Address range: 0 to 23039 (160*144-1) for GameBoy screen.\n"
 
-let () = test_framebuf_address_assertion ()
+(** Convert to alcotest test case *)
+let test_framebuf_address_assertion_case () =
+  try test_framebuf_address_assertion ()
+  with exn ->
+    Alcotest.failf "Framebuffer address assertion test failed: %s" (Exn.to_string exn)
+
+(** Main test function using alcotest *)
+let () =
+  let open Alcotest in
+  run "Framebuffer Assertion Tests"
+    [ ( "framebuffer"
+      , [ test_case "Address assertion mechanism" `Quick
+            test_framebuf_address_assertion_case
+        ] )
+    ]
