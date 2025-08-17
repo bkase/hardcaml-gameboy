@@ -32,13 +32,13 @@
   (progn
    (run %{test}))))
 
-(executable
+(test
  (name test_framebuf_assertion)
- (libraries hardcaml base stdio ppu))
+ (libraries alcotest hardcaml base stdio ppu))
 
 
 (test
  (name test_bg_fetcher)
- (libraries hardcaml hardcaml_waveterm base stdio ppu)
+ (libraries alcotest hardcaml hardcaml_waveterm base stdio ppu)
  (flags
   (:standard -w +26+8+11 -warn-error +26+8+11)))
