@@ -11,6 +11,7 @@ static uint32_t pixel_buffer[160 * 144];
 static int frame_count = 0;
 static int target_frames = 0;
 static int enable_debug = 0;
+static int dump_vram = 0;
 
 static void log_callback(GB_gameboy_t *gb, const char *string, GB_log_attributes attributes) {
     // Only print logs in debug mode
@@ -65,20 +66,41 @@ static void output_frame_rgb555_to_stdout(int frame_num) {
     fflush(stdout);
 }
 
+static void output_vram_to_stdout(GB_gameboy_t *gb) {
+    // Output VRAM dump ($8000-$9FFF = 0x2000 bytes)
+    if (enable_debug) {
+        fprintf(stderr, "[VRAM] Dumping 0x2000 bytes of VRAM\n");
+    }
+    
+    for (int addr = 0x8000; addr < 0xA000; addr++) {
+        uint8_t byte = GB_read_memory(gb, addr);
+        fwrite(&byte, 1, 1, stdout);
+    }
+    
+    fflush(stdout);
+}
+
 
 int main(int argc, char **argv) {
-    if (argc < 3 || argc > 4) {
-        fprintf(stderr, "Usage: %s <rom_file> <num_frames> [--debug]\n", argv[0]);
+    if (argc < 3 || argc > 5) {
+        fprintf(stderr, "Usage: %s <rom_file> <num_frames> [--debug] [--vram]\n", argv[0]);
         return 1;
     }
     
     const char *rom_file = argv[1];
     target_frames = atoi(argv[2]);
     
-    // Check for debug flag
-    if (argc == 4 && strcmp(argv[3], "--debug") == 0) {
-        enable_debug = 1;
-        fprintf(stderr, "Debug mode enabled\n");
+    // Check for optional flags
+    for (int i = 3; i < argc; i++) {
+        if (strcmp(argv[i], "--debug") == 0) {
+            enable_debug = 1;
+            fprintf(stderr, "Debug mode enabled\n");
+        } else if (strcmp(argv[i], "--vram") == 0) {
+            dump_vram = 1;
+            if (enable_debug) {
+                fprintf(stderr, "VRAM dump enabled\n");
+            }
+        }
     }
     
     // Initialize GB
@@ -137,6 +159,11 @@ int main(int argc, char **argv) {
     
     // Output the final frame data to stdout
     output_frame_rgb555_to_stdout(target_frames);
+    
+    // Optionally output VRAM dump
+    if (dump_vram) {
+        output_vram_to_stdout(&gb);
+    }
     
     GB_free(&gb);
     

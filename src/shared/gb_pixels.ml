@@ -16,3 +16,10 @@ let to_rgb888 ~rgb555 =
   let r5, g5, b5 = unpack_rgb555 rgb555 in
   let scale c5 = c5 * 255 / 31 in
   scale r5, scale g5, scale b5
+
+let expand_row_2bpp_msb_first ~lo ~hi =
+  Array.init 8 ~f:(fun i ->
+      let bit = 7 - i in
+      let lo_bit = (lo lsr bit) land 1 in
+      let hi_bit = (hi lsr bit) land 1 in
+      (hi_bit lsl 1) lor lo_bit)
