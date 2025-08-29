@@ -1,0 +1,4 @@
+(library
+ (name gbc_spec)
+ (libraries core)
+ (flags (:standard -w -9-27)))

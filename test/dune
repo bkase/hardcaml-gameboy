@@ -42,3 +42,9 @@
  (libraries alcotest hardcaml hardcaml_waveterm base stdio ppu)
  (flags
   (:standard -w +26+8+11 -warn-error +26+8+11)))
+
+(test
+ (name spec_phase1_vs_sameboy)
+ (libraries alcotest core core_unix gbc_spec)
+ (deps tools_and_roms_built)
+ (flags (:standard -w -9-27)))
