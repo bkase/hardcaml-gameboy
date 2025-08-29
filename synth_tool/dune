@@ -1,7 +1,7 @@
 (executable
  (public_name hardcaml-synthesize)
  (name synthesize)
- (libraries core stdio unix hardcaml ppu)
+ (libraries core stdio unix hardcaml hardcaml_gameboy_rtl_ppu)
  (preprocess
   (pps ppx_hardcaml))
  (flags

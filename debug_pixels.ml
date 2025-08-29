@@ -1,7 +1,7 @@
 open Base
 open Hardcaml
 open Stdio
-module Bg_fetcher = Ppu.Bg_fetcher_dmg
+module Bg_fetcher = Hardcaml_gameboy_rtl_ppu.Bg_fetcher_dmg
 
 let debug_first_tile () =
   printf "=== Debug: First Tile Analysis with Waveforms ===\n" ;

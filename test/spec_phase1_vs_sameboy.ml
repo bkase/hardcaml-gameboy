@@ -60,7 +60,8 @@ let run_sameboy_oracle ~workspace_root =
 
     (* Save oracle PPM file *)
     let ppm_path = "_build/_oracle/phase1_checker.ppm" in
-    Gbc_spec.Ppm.write_ppm_rgb555 ~path:ppm_path ~width:160 ~height:144 ~buf:pixels ;
+    Hardcaml_gameboy_spec.Ppm.write_ppm_rgb555 ~path:ppm_path ~width:160 ~height:144
+      ~buf:pixels ;
 
     pixels
   | WEXITED 0 ->
@@ -77,7 +78,7 @@ let run_spec () =
   Core_unix.mkdir_p dut_dir ;
 
   (* Generate the checkerboard pattern using the spec *)
-  let pixels = Gbc_spec.Phase1_checker_spec.render () in
+  let pixels = Hardcaml_gameboy_spec.Phase1_checker_spec.render () in
 
   (* Save DUT RGB555 raw file *)
   let rgb555_path = dut_dir ^/ "phase1_checker.rgb555" in
@@ -90,7 +91,8 @@ let run_spec () =
 
   (* Save DUT PPM file *)
   let ppm_path = dut_dir ^/ "phase1_checker.ppm" in
-  Gbc_spec.Ppm.write_ppm_rgb555 ~path:ppm_path ~width:160 ~height:144 ~buf:pixels ;
+  Hardcaml_gameboy_spec.Ppm.write_ppm_rgb555 ~path:ppm_path ~width:160 ~height:144
+    ~buf:pixels ;
 
   pixels
 
@@ -100,11 +102,13 @@ let write_diff_artifacts ~expected ~actual =
 
   (* Save expected PPM *)
   let expected_ppm = artifacts_dir ^/ "expected.ppm" in
-  Gbc_spec.Ppm.write_ppm_rgb555 ~path:expected_ppm ~width:160 ~height:144 ~buf:expected ;
+  Hardcaml_gameboy_spec.Ppm.write_ppm_rgb555 ~path:expected_ppm ~width:160 ~height:144
+    ~buf:expected ;
 
   (* Save actual PPM *)
   let actual_ppm = artifacts_dir ^/ "actual.ppm" in
-  Gbc_spec.Ppm.write_ppm_rgb555 ~path:actual_ppm ~width:160 ~height:144 ~buf:actual ;
+  Hardcaml_gameboy_spec.Ppm.write_ppm_rgb555 ~path:actual_ppm ~width:160 ~height:144
+    ~buf:actual ;
 
   (* Create diff image *)
   let diff =
@@ -116,7 +120,8 @@ let write_diff_artifacts ~expected ~actual =
   in
 
   let diff_ppm = artifacts_dir ^/ "diff.ppm" in
-  Gbc_spec.Ppm.write_ppm_rgb555 ~path:diff_ppm ~width:160 ~height:144 ~buf:diff ;
+  Hardcaml_gameboy_spec.Ppm.write_ppm_rgb555 ~path:diff_ppm ~width:160 ~height:144
+    ~buf:diff ;
 
   (* Log mismatches *)
   let mismatches = ref [] in
@@ -132,8 +137,8 @@ let write_diff_artifacts ~expected ~actual =
     Printf.printf "\nFirst 10 mismatches:\n" ;
     List.take (List.rev !mismatches) 10
     |> List.iter ~f:(fun (x, y, exp_val, act_val) ->
-           let exp_r5, exp_g5, exp_b5 = Gbc_spec.Rgb.unpack_rgb555 exp_val in
-           let act_r5, act_g5, act_b5 = Gbc_spec.Rgb.unpack_rgb555 act_val in
+           let exp_r5, exp_g5, exp_b5 = Hardcaml_gameboy_spec.Rgb.unpack_rgb555 exp_val in
+           let act_r5, act_g5, act_b5 = Hardcaml_gameboy_spec.Rgb.unpack_rgb555 act_val in
            Printf.printf
              "  (%d,%d): exp=0x%04x (r=%d,g=%d,b=%d) act=0x%04x (r=%d,g=%d,b=%d) | \
               ΔR=%d,ΔG=%d,ΔB=%d\n"

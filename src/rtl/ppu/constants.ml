@@ -27,6 +27,10 @@ let rgb555_white = 0x7FFF (* All RGB bits set to maximum *)
 
 let rgb555_black = 0x0000 (* All RGB bits set to zero *)
 
+let rgb555_light_gray = 0x5AD6 (* Light gray shade *)
+
+let rgb555_dark_gray = 0x2D6B (* Dark gray shade *)
+
 (* RGB555 bit field positions *)
 let rgb555_red_shift = 10 (* Red channel starts at bit 10 *)
 

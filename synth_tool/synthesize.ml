@@ -22,31 +22,36 @@ let write_verilog_file ~filename ~circuit =
 
 let synthesize_bg_fetcher_dmg () =
   printf "Synthesizing Bg_fetcher_dmg module...\n%!" ;
-  let module I = Ppu.Bg_fetcher_dmg.I in
-  let module O = Ppu.Bg_fetcher_dmg.O in
+  let module I = Hardcaml_gameboy_rtl_ppu.Bg_fetcher_dmg.I in
+  let module O = Hardcaml_gameboy_rtl_ppu.Bg_fetcher_dmg.O in
   let module Circuit = Circuit.With_interface (I) (O) in
   let scope = Scope.create ~flatten_design:false () in
-  let circuit = Circuit.create_exn ~name:"bg_fetcher_dmg" (Ppu.Bg_fetcher_dmg.create scope) in
+  let circuit =
+    Circuit.create_exn ~name:"bg_fetcher_dmg"
+      (Hardcaml_gameboy_rtl_ppu.Bg_fetcher_dmg.create scope)
+  in
   write_verilog_file ~filename:"synth/bg_fetcher_dmg.v" ~circuit
 
 let synthesize_framebuf () =
   printf "Synthesizing Framebuf module...\n%!" ;
-  let module I = Ppu.Framebuf.I in
-  let module O = Ppu.Framebuf.O in
+  let module I = Hardcaml_gameboy_rtl_ppu.Framebuf.I in
+  let module O = Hardcaml_gameboy_rtl_ppu.Framebuf.O in
   let module Circuit = Circuit.With_interface (I) (O) in
   let scope = Scope.create ~flatten_design:false () in
-  let circuit = Circuit.create_exn ~name:"framebuf" (Ppu.Framebuf.create scope) in
+  let circuit =
+    Circuit.create_exn ~name:"framebuf" (Hardcaml_gameboy_rtl_ppu.Framebuf.create scope)
+  in
   write_verilog_file ~filename:"synth/framebuf.v" ~circuit
 
 let synthesize_top_checker_to_framebuf () =
   printf "Synthesizing Top_checker_to_framebuf module...\n%!" ;
-  let module I = Ppu.Top_checker_to_framebuf.I in
-  let module O = Ppu.Top_checker_to_framebuf.O in
+  let module I = Hardcaml_gameboy_rtl_ppu.Top_checker_to_framebuf.I in
+  let module O = Hardcaml_gameboy_rtl_ppu.Top_checker_to_framebuf.O in
   let module Circuit = Circuit.With_interface (I) (O) in
   let scope = Scope.create ~flatten_design:false () in
   let circuit =
     Circuit.create_exn ~name:"top_checker_to_framebuf"
-      (Ppu.Top_checker_to_framebuf.create scope)
+      (Hardcaml_gameboy_rtl_ppu.Top_checker_to_framebuf.create scope)
   in
   write_verilog_file ~filename:"synth/top_checker_to_framebuf.v" ~circuit
 
