@@ -1,8 +1,8 @@
 open Core
+open Gb_shared
 
 let render () =
-  let width = 160 in
-  let height = 144 in
+  let width, height = Fb_index.dims () in
   let buf = Array.create ~len:(width * height) 0 in
 
   (* Generate 8x8 tile-aligned checkerboard pattern *)
@@ -12,7 +12,8 @@ let render () =
       let sel = (x lsr 3) lxor (y lsr 3) land 1 in
       (* White (0x7FFF) or Black (0x0000) based on parity - inverted to match oracle *)
       let color = if sel = 0 then 0x0000 else 0x7FFF in
-      buf.((y * width) + x) <- color
+      let index = Fb_index.word_index ~x ~y ~width in
+      buf.(index) <- color
     done
   done ;
   buf

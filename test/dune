@@ -45,6 +45,11 @@
 
 (test
  (name spec_phase1_vs_sameboy)
- (libraries alcotest core core_unix hardcaml_gameboy_spec)
+ (libraries alcotest core core_unix hardcaml_gameboy_spec gb_shared)
  (deps tools_and_roms_built)
+ (flags (:standard -w -9-27)))
+
+(test
+ (name test_shared)
+ (libraries alcotest core gb_shared)
  (flags (:standard -w -9-27)))
