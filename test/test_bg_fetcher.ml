@@ -5,7 +5,7 @@ open Printf
 
 (** For testing, use the existing Checker_fill interface which the bg_fetcher will match
 *)
-module Bg_fetcher = Ppu.Bg_fetcher_dmg
+module Bg_fetcher = Hardcaml_gameboy_rtl_ppu.Bg_fetcher_dmg
 
 (** Test helper functions *)
 
@@ -18,7 +18,8 @@ let checkerboard_pattern x y =
   let tile_x = next_x / 8 in
   let tile_y = next_y / 8 in
   let tile_index = tile_x lxor tile_y land 1 in
-  if tile_index = 0 then Ppu.Constants.rgb555_black else Ppu.Constants.rgb555_white
+  if tile_index = 0 then Hardcaml_gameboy_rtl_ppu.Constants.rgb555_black
+  else Hardcaml_gameboy_rtl_ppu.Constants.rgb555_white
 
 (** Calculate tilemap address for given tile coordinates *)
 let tilemap_address tile_x tile_y = (tile_y * 32) + tile_x (* 32-tile stride, not 20! *)
@@ -38,10 +39,14 @@ let decode_2bpp high_byte low_byte =
 (** Apply BGP palette (0xE4) to color index *)
 let apply_bgp_palette color_index =
   match color_index with
-  | 0 -> Ppu.Constants.rgb555_white (* BGP bits 1-0: 00 -> color 0 -> white *)
+  | 0 ->
+    Hardcaml_gameboy_rtl_ppu.Constants.rgb555_white
+    (* BGP bits 1-0: 00 -> color 0 -> white *)
   | 1 -> 0x5AD6 (* BGP bits 3-2: 01 -> color 1 -> light gray (example) *)
   | 2 -> 0x294A (* BGP bits 5-4: 10 -> color 2 -> dark gray (example) *)
-  | 3 -> Ppu.Constants.rgb555_black (* BGP bits 7-6: 11 -> color 3 -> black *)
+  | 3 ->
+    Hardcaml_gameboy_rtl_ppu.Constants.rgb555_black
+    (* BGP bits 7-6: 11 -> color 3 -> black *)
   | _ -> failwith "Invalid color index"
 
 (** Create a simulation instance *)
@@ -252,7 +257,11 @@ let test_bgp_palette () =
   (* BGP = 0xE4 = 11100100 in binary Bits 7-6: 11 -> color 3 maps to index 3 (black) Bits
      5-4: 10 -> color 2 maps to index 2 Bits 3-2: 01 -> color 1 maps to index 1 Bits 1-0:
      00 -> color 0 maps to index 0 (white) *)
-  let test_cases = [ 0, Ppu.Constants.rgb555_white; 3, Ppu.Constants.rgb555_black ] in
+  let test_cases =
+    [ 0, Hardcaml_gameboy_rtl_ppu.Constants.rgb555_white
+    ; 3, Hardcaml_gameboy_rtl_ppu.Constants.rgb555_black
+    ]
+  in
 
   List.iter test_cases ~f:(fun (color_index, expected_rgb) ->
       let actual_rgb = apply_bgp_palette color_index in
@@ -494,7 +503,7 @@ let test_checkerboard_output () =
     printf "    ✓ Frame completed in %d cycles with %d pixels\n" !cycle_count total_pixels ;
 
     (* Verify total pixel count *)
-    let expected_total = Ppu.Constants.total_pixels in
+    let expected_total = Hardcaml_gameboy_rtl_ppu.Constants.total_pixels in
     if total_pixels <> expected_total then
       failwith (sprintf "FAIL: Expected %d pixels, got %d" expected_total total_pixels) ;
 
@@ -511,8 +520,8 @@ let test_checkerboard_output () =
     let max_errors_to_show = 10 in
 
     for addr = 0 to expected_total - 1 do
-      let x = addr % Ppu.Constants.screen_width in
-      let y = addr / Ppu.Constants.screen_width in
+      let x = addr % Hardcaml_gameboy_rtl_ppu.Constants.screen_width in
+      let y = addr / Hardcaml_gameboy_rtl_ppu.Constants.screen_width in
       let expected_color = checkerboard_pattern x y in
       let actual_addr, actual_color = pixel_array.(addr) in
 

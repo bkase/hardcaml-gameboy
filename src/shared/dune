@@ -1,0 +1,6 @@
+(library
+ (name gb_shared)
+ (public_name hardcaml-gameboy.shared)
+ (libraries core)
+ (modules_without_implementation bitops)
+ (flags (:standard -w -9-27)))

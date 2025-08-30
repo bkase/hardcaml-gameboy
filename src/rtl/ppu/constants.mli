@@ -42,6 +42,10 @@ val rgb555_white : int
 (** Black color in RGB555 format (0x0000) *)
 val rgb555_black : int
 
+val rgb555_light_gray : int
+
+val rgb555_dark_gray : int
+
 (** {1 RGB555 Bit Field Layout} *)
 
 (** Bit position for red channel start (10) *)

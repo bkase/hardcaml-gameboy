@@ -1,4 +1,4 @@
 (executable
  (public_name debug_pixels)
  (name debug_pixels)
- (libraries ppu base stdio hardcaml))
+ (libraries hardcaml_gameboy_rtl_ppu base stdio hardcaml))

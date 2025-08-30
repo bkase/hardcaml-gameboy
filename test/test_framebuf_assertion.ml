@@ -5,9 +5,13 @@ open Stdio
 let test_framebuf_address_assertion () =
   printf "Testing framebuffer address assertion mechanism...\n\n" ;
 
-  let module Sim = Cyclesim.With_interface (Ppu.Framebuf.I) (Ppu.Framebuf.O) in
+  let module Sim =
+    Cyclesim.With_interface
+      (Hardcaml_gameboy_rtl_ppu.Framebuf.I)
+      (Hardcaml_gameboy_rtl_ppu.Framebuf.O)
+  in
   let scope = Scope.create ~flatten_design:true () in
-  let sim = Sim.create (Ppu.Framebuf.create scope) in
+  let sim = Sim.create (Hardcaml_gameboy_rtl_ppu.Framebuf.create scope) in
 
   let inputs = Cyclesim.inputs sim in
   let _outputs = Cyclesim.outputs sim in

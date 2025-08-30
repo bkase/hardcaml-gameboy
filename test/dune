@@ -24,7 +24,7 @@
   core
   core_unix
   core_unix.sys_unix
-  ppu)
+  hardcaml_gameboy_rtl_ppu)
  (deps tools_and_roms_built)
  (flags
   (:standard -w +26+8+11 -warn-error +26+8+11))
@@ -34,11 +34,33 @@
 
 (test
  (name test_framebuf_assertion)
- (libraries alcotest hardcaml base stdio ppu))
+ (libraries alcotest hardcaml base stdio hardcaml_gameboy_rtl_ppu))
 
 
 (test
  (name test_bg_fetcher)
- (libraries alcotest hardcaml hardcaml_waveterm base stdio ppu)
+ (libraries alcotest hardcaml hardcaml_waveterm base stdio hardcaml_gameboy_rtl_ppu)
  (flags
   (:standard -w +26+8+11 -warn-error +26+8+11)))
+
+(test
+ (name spec_phase1_vs_sameboy)
+ (libraries alcotest core core_unix hardcaml_gameboy_spec gb_shared spec_ppu)
+ (deps tools_and_roms_built)
+ (flags (:standard -w -9-27)))
+
+(test
+ (name test_shared)
+ (libraries alcotest core gb_shared spec_ppu)
+ (flags (:standard -w -9-27)))
+
+(test
+ (name spec_phase2_vs_sameboy)
+ (libraries alcotest core core_unix core_unix.sys_unix hardcaml_gameboy_spec gb_shared spec_ppu)
+ (deps tools_and_roms_built)
+ (flags (:standard -w -9-27)))
+
+(test
+ (name test_functor_equivalence)
+ (libraries alcotest core hardcaml gb_shared spec_ppu hardcaml_gameboy_rtl_ppu)
+ (flags (:standard -w -9-27)))

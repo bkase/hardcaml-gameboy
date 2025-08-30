@@ -1,0 +1,5 @@
+(library
+ (name hardcaml_gameboy_spec)
+ (public_name hardcaml-gameboy.spec)
+ (libraries core gb_shared spec_ppu)
+ (flags (:standard -w -9-27)))

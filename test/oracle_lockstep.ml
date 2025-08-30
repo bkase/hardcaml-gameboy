@@ -1,6 +1,6 @@
 open Core
 open Hardcaml
-module Top = Ppu.Top_checker_to_framebuf
+module Top = Hardcaml_gameboy_rtl_ppu.Top_checker_to_framebuf
 
 (* Test configuration *)
 let rom_env_var = "ROM"
