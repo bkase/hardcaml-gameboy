@@ -150,8 +150,12 @@ let write_diff_artifacts ~expected ~actual =
     Printf.printf "\nFirst 10 mismatches:\n" ;
     List.take (List.rev !mismatches) 10
     |> List.iter ~f:(fun (x, y, exp_val, act_val) ->
-           let exp_r5, exp_g5, exp_b5 = Gb_shared.Gb_pixels.unpack_rgb555 exp_val in
-           let act_r5, act_g5, act_b5 = Gb_shared.Gb_pixels.unpack_rgb555 act_val in
+           let exp_r5, exp_g5, exp_b5 =
+             Spec_ppu.Gb_math_int.Pixels.unpack_rgb555 exp_val
+           in
+           let act_r5, act_g5, act_b5 =
+             Spec_ppu.Gb_math_int.Pixels.unpack_rgb555 act_val
+           in
            Printf.printf
              "  (%d,%d): exp=0x%04x (r=%d,g=%d,b=%d) act=0x%04x (r=%d,g=%d,b=%d) | \
               ΔR=%d,ΔG=%d,ΔB=%d\n"

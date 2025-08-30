@@ -1,28 +1,33 @@
-(** Bit operations abstraction for future functorization *)
-
-(** Bit operations signature for integers and signals *)
 module type S = sig
-  (** Left shift *)
-  val ( lsl ) : int -> int -> int
+  type t
 
-  (** Right shift *)
-  val ( lsr ) : int -> int -> int
+  val zero : int -> t
 
-  (** Bitwise AND *)
-  val ( land ) : int -> int -> int
+  val const : int -> width:int -> t
 
-  (** Bitwise OR *)
-  val ( lor ) : int -> int -> int
+  val ( + ) : t -> t -> t
 
-  (** Bitwise XOR *)
-  val ( lxor ) : int -> int -> int
+  val ( - ) : t -> t -> t
 
-  (** Mask to specified number of bits *)
-  val mask : int -> bits:int -> int
+  val ( land ) : t -> t -> t
 
-  (** Test bit at index *)
-  val test_bit : int -> idx:int -> int
+  val ( lor ) : t -> t -> t
+
+  val ( lxor ) : t -> t -> t
+
+  val ( lsl ) : t -> int -> t
+
+  val ( lsr ) : t -> int -> t
+
+  val eq : t -> t -> t
+
+  val lt : t -> t -> t
+
+  val uresize : t -> width:int -> t
+
+  val select : t -> int -> int -> t
+
+  val mux2 : sel:t -> t -> t -> t
+
+  val mux : sel:t -> t list -> t
 end
-
-(** Integer implementation *)
-module Int : S

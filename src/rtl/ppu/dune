@@ -1,7 +1,7 @@
 (library
  (name hardcaml_gameboy_rtl_ppu)
  (public_name hardcaml-gameboy.rtl.ppu)
- (libraries hardcaml core)
+ (libraries hardcaml core gb_shared)
  (preprocess
   (pps ppx_hardcaml))
  (flags
